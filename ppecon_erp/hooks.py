@@ -143,16 +143,15 @@ app_license = "mit"
 doc_events = {
     "ToDo": {
         "on_update": "ppecon_erp.todo.todo.notify_assigned_user"
-    }
-
+    },
+    "Inventory Management": {
+        "after_insert": "ppecon_erp.inventory_management.qr_handler.generate_inventory_qr",
+        "on_update": "ppecon_erp.inventory_management.qr_handler.generate_inventory_qr",
+        "on_trash": "ppecon_erp.inventory_management.qr_handler.delete_existing_qr"
+    },
 }
 
 
-#   "Inventory Management": {
-#         "after_insert": "ppecon_erp.inventory_management.qr_handler.generate_inventory_qr",
-#         "on_update": "ppecon_erp.inventory_management.qr_handler.generate_inventory_qr",
-#         "on_trash": "ppecon_erp.inventory_management.qr_handler.delete_existing_qr"
-#     }
 # ---------------
 # Hook on document methods and events
 
