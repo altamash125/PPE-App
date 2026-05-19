@@ -477,3 +477,6 @@ def get_delay_analytics(filters=None):
             'status': 'error',
             'message': str(e)
         }
+    
+
+    
