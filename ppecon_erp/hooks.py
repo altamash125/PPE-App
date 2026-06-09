@@ -27,6 +27,8 @@ app_license = "mit"
 # include js, css files in header of desk.html
 # app_include_css = "/assets/ppecon_erp/css/ppecon_erp.css"
 # app_include_js = "/assets/ppecon_erp/js/ppecon_erp.js"
+app_include_js = "notification.bundle.js"
+
 
 # include js, css files in header of web template
 # web_include_css = "/assets/ppecon_erp/css/ppecon_erp.css"
@@ -165,7 +167,16 @@ doc_events = {
 
 # Scheduled Tasks
 # ---------------
-
+scheduler_events = {
+    "daily": [
+        "ppecon_erp.dashboard.po_delivery_followup.run_po_followup"
+    ],
+    "cron": {
+        "0 0 1 * *": [
+            "ppecon_erp.leave_application.leave_balance.update_monthly_leave_allocations"
+        ]
+    }
+}
 # scheduler_events = {
 # 	"all": [
 # 		"ppecon_erp.tasks.all"
