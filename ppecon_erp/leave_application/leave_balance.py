@@ -18,23 +18,24 @@ def get_my_leave_balance():
     result = {}
 
     for leave_type in leave_types:
+        # Credited — to_date filter nahi, sirf from_date <= today
         credited = frappe.db.sql("""
             SELECT COALESCE(SUM(leaves), 0) as total
             FROM `tabLeave Ledger Entry`
             WHERE employee = %s
               AND leave_type = %s
-              AND transaction_type = 'Leave Allocation'
+              AND leaves > 0
               AND is_expired = 0
               AND from_date <= %s
-              AND to_date >= %s
-        """, (employee, leave_type, today_date, today_date), as_dict=1)[0].total
+        """, (employee, leave_type, today_date), as_dict=1)[0].total
 
+        # Debited — leave taken
         debited = frappe.db.sql("""
             SELECT COALESCE(SUM(leaves), 0) as total
             FROM `tabLeave Ledger Entry`
             WHERE employee = %s
               AND leave_type = %s
-              AND transaction_type = 'Leave Application'
+              AND leaves < 0
               AND is_expired = 0
               AND from_date <= %s
         """, (employee, leave_type, today_date), as_dict=1)[0].total
@@ -42,11 +43,9 @@ def get_my_leave_balance():
         balance = round(flt(credited) + flt(debited), 2)
 
         key = "annual_leave" if leave_type == "Annual Leave" else "sick_leave"
-        result[key] = float(balance)  # hamesha float aayega — 20.0, 22.5, 8.0
+        result[key] = float(balance)
 
     return result
-
-
 
 
 
