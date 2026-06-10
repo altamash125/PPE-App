@@ -1,66 +1,124 @@
-# import frappe
-# from frappe.utils import flt
+import frappe
+from frappe.utils import flt, getdate, today
 
-# @frappe.whitelist()
-# def get_my_leave_balance():
-#     # Get logged-in user
-#     user = frappe.session.user
+@frappe.whitelist()
+def get_my_leave_balance():
+    user = frappe.session.user
 
-#     if user == "Guest":
-#         frappe.throw("User not logged in")
+    if user == "Guest":
+        frappe.throw("User not logged in", frappe.AuthenticationError)
 
-#     # Get employee linked to user
-#     employee = frappe.get_value("Employee", {"user_id": user}, "name")
+    # User se employee nikalo
+    employee = frappe.db.get_value("Employee", {"user_id": user}, 
+                                    ["name", "employee_name", "date_of_joining", 
+                                     "custom_contract_period"], as_dict=1)
 
-#     if not employee:
-#         frappe.throw("Employee not linked to this user")
+    if not employee:
+        frappe.throw("No employee linked to this user")
 
-#     # Get all submitted Leave Allocations
-#     allocations = frappe.get_all(
-#         "Leave Allocation",
-#         filters={
-#             "employee": employee,
-#             "docstatus": 1
-#         },
-#         fields=[
-#             "name",
-#             "leave_type",
-#             "total_leaves_allocated",
-#             "from_date",
-#             "to_date"
-#         ]
-#     )
+    today_date = getdate(today())
 
-#     result = []
+    # Saare active leave types nikalo jinka allocation hai
+    allocations = frappe.db.sql("""
+        SELECT DISTINCT
+            la.leave_type,
+            la.name as allocation_name,
+            la.from_date,
+            la.to_date,
+            la.new_leaves_allocated,
+            la.total_leaves_allocated
+        FROM `tabLeave Allocation` la
+        WHERE la.employee = %s
+          AND la.docstatus = 1
+          AND la.from_date <= %s
+          AND la.to_date >= %s
+        ORDER BY la.leave_type, la.from_date DESC
+    """, (employee.name, today_date, today_date), as_dict=1)
 
-#     for alloc in allocations:
+    result = []
 
-#         # Calculate approved leaves taken
-#         leaves_taken = frappe.db.sql("""
-#             SELECT SUM(total_leave_days)
-#             FROM `tabLeave Application`
-#             WHERE employee = %s
-#             AND leave_type = %s
-#             AND status = 'Approved'
-#         """, (employee, alloc.leave_type))[0][0] or 0
+    for alloc in allocations:
+        # Ledger se total credited (allocation entries)
+        credited = frappe.db.sql("""
+            SELECT COALESCE(SUM(leaves), 0) as total
+            FROM `tabLeave Ledger Entry`
+            WHERE employee = %s
+              AND leave_type = %s
+              AND transaction_type = 'Leave Allocation'
+              AND is_expired = 0
+              AND from_date <= %s
+              AND to_date >= %s
+        """, (employee.name, alloc.leave_type, today_date, today_date), as_dict=1)[0].total
 
-#         leaves_taken = flt(leaves_taken)
-#         allocated = flt(alloc.total_leaves_allocated)
-#         remaining = allocated - leaves_taken
+        # Ledger se total debited (leave application entries)
+        debited = frappe.db.sql("""
+            SELECT COALESCE(SUM(leaves), 0) as total
+            FROM `tabLeave Ledger Entry`
+            WHERE employee = %s
+              AND leave_type = %s
+              AND transaction_type = 'Leave Application'
+              AND is_expired = 0
+              AND from_date <= %s
+        """, (employee.name, alloc.leave_type, today_date), as_dict=1)[0].total
 
-#         result.append({
-#             "leave_type": alloc.leave_type,
-#             "from_date": alloc.from_date,
-#             "to_date": alloc.to_date,
-#             "allocated": allocated,
-#             "taken": leaves_taken,
-#             "remaining": remaining
-#         })
+        # Current balance = credited + debited (debited negative hota hai)
+        balance = flt(credited) + flt(debited)
 
-#     return {
-#         "employee": employee,
-#         "data": result
-#     }
+        # Last approved leave
+        last_leave = frappe.db.sql("""
+            SELECT from_date, to_date, total_leave_days
+            FROM `tabLeave Application`
+            WHERE employee = %s
+              AND leave_type = %s
+              AND status = 'Approved'
+              AND docstatus = 1
+            ORDER BY to_date DESC
+            LIMIT 1
+        """, (employee.name, alloc.leave_type), as_dict=1)
+
+        # Pending leaves (submitted but not approved)
+        pending = frappe.db.sql("""
+            SELECT COALESCE(SUM(total_leave_days), 0) as total
+            FROM `tabLeave Application`
+            WHERE employee = %s
+              AND leave_type = %s
+              AND status = 'Open'
+              AND docstatus = 0
+        """, (employee.name, alloc.leave_type), as_dict=1)[0].total
+
+        result.append({
+            "leave_type": alloc.leave_type,
+            "allocation_from": str(alloc.from_date),
+            "allocation_to": str(alloc.to_date),
+            "total_allocated": flt(credited),
+            "leaves_taken": abs(flt(debited)),
+            "pending_leaves": flt(pending),
+            "balance": round(flt(balance), 2)
+        })
+
+    # Contract info
+    contract = str(employee.custom_contract_period or "").strip().lower()
+    if contract == "two year":
+        monthly_accrual = round(45 / 24, 4)
+        total_entitlement = 45
+    else:
+        monthly_accrual = round(30 / 12, 4)
+        total_entitlement = 30
+
+    return {
+        "employee_id": employee.name,
+        "employee_name": employee.employee_name,
+        "date_of_joining": str(employee.date_of_joining),
+        "contract_period": employee.custom_contract_period,
+        "monthly_accrual": monthly_accrual,
+        "total_entitlement": total_entitlement,
+        "as_on_date": str(today_date),
+        "leave_balances": result
+    }
+
+
+
+
 
 
 
