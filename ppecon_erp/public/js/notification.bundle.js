@@ -1,39 +1,39 @@
 // Utility function to set a cookie
 function setCookie(name, value, days) {
-    let expires = "";
-    if (days) {
-        const date = new Date();
-        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-        expires = "; expires=" + date.toUTCString();
-    }
-    document.cookie = name + "=" + (value || "") + expires + "; path=/";
+	let expires = "";
+	if (days) {
+		const date = new Date();
+		date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+		expires = "; expires=" + date.toUTCString();
+	}
+	document.cookie = name + "=" + (value || "") + expires + "; path=/";
 }
 
 // Utility function to get a cookie
 function getCookie(name) {
-    const nameEQ = name + "=";
-    const ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-    }
-    return null;
+	const nameEQ = name + "=";
+	const ca = document.cookie.split(";");
+	for (let i = 0; i < ca.length; i++) {
+		let c = ca[i];
+		while (c.charAt(0) === " ") c = c.substring(1, c.length);
+		if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+	}
+	return null;
 }
 
 // Utility function to erase a cookie
 function eraseCookie(name) {
-    document.cookie = name + "=; Max-Age=-99999999;";
+	document.cookie = name + "=; Max-Age=-99999999;";
 }
 
 function createQuickChatButton(rootElement) {
-    const mainContainer = $('<div></div>');
+	const mainContainer = $("<div></div>");
 
-    // Create the audio element for notification sound
-    const notificationSound = new Audio('/files/pristine-609.mp3');  // Replace with the path to your sound file
+	// Create the audio element for notification sound
+	const notificationSound = new Audio("/files/pristine-609.mp3"); // Replace with the path to your sound file
 
-    // Create the popup modal for displaying notifications
-    const popup = $(`
+	// Create the popup modal for displaying notifications
+	const popup = $(`
         <div class="modal fade" id="quick-chat-popup" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
             <div class="modal-dialog" role="document" style="bottom: 60px; position: absolute; right: 20px; max-width: 400px; width: 100%;">
                 <div class="modal-content" id="main-quick-chat-container" style="border-radius: 10px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);">
@@ -51,48 +51,50 @@ function createQuickChatButton(rootElement) {
         </div>
     `);
 
-    // Create the notification bell button with improved styles
-    const button = $('<button id="quick_chat_button" data-toggle="modal" data-target="#quick-chat-popup" type="button" class="btn btn-primary btn-rounded btn-icon"><i class="fa fa-bell"></i></button>');
+	// Create the notification bell button with improved styles
+	const button = $(
+		'<button id="quick_chat_button" data-toggle="modal" data-target="#quick-chat-popup" type="button" class="btn btn-primary btn-rounded btn-icon"><i class="fa fa-bell"></i></button>',
+	);
 
-    const countElement = $('<span class="count">0</span>');
+	const countElement = $('<span class="count">0</span>');
 
-    countElement.css({
-        'position': 'absolute',
-        'top': '-5px',
-        'right': '-5px',
-        'background-color': 'red',
-        'color': 'white',
-        'border-radius': '50%',
-        'padding': '2px 5px',
-        'font-size': '12px',
-        'min-width': '20px',
-        'text-align': 'center'
-    });
+	countElement.css({
+		position: "absolute",
+		top: "-5px",
+		right: "-5px",
+		"background-color": "red",
+		color: "white",
+		"border-radius": "50%",
+		padding: "2px 5px",
+		"font-size": "12px",
+		"min-width": "20px",
+		"text-align": "center",
+	});
 
-    button.css({
-        'position': 'fixed',
-        'bottom': '20px',
-        'right': '100px',
-        'border-radius': '50%',
-        'width': '50px',
-        'height': '50px',
-        'align-items': 'center',
-        'justify-content': 'center',
-        'z-index': '9999',
-        'box-shadow': '0px 0px 10px rgba(0, 0, 0, 0.2)',
-        'background-color': '#007bff',
-        'color': 'white',
-        'font-size': '20px'
-    });
+	button.css({
+		position: "fixed",
+		bottom: "20px",
+		right: "100px",
+		"border-radius": "50%",
+		width: "50px",
+		height: "50px",
+		"align-items": "center",
+		"justify-content": "center",
+		"z-index": "9999",
+		"box-shadow": "0px 0px 10px rgba(0, 0, 0, 0.2)",
+		"background-color": "#007bff",
+		color: "white",
+		"font-size": "20px",
+	});
 
-    // Append count element and button to main container
-    button.append(countElement);
-    mainContainer.append(popup);
-    mainContainer.append(button);
-    $(rootElement).append(mainContainer);
+	// Append count element and button to main container
+	button.append(countElement);
+	mainContainer.append(popup);
+	mainContainer.append(button);
+	$(rootElement).append(mainContainer);
 
-    // Media queries for responsiveness
-    const mediaStyles = `
+	// Media queries for responsiveness
+	const mediaStyles = `
         /* Mobile Screens (up to 768px) */
         @media (max-width: 768px) {
             #quick_chat_button {
@@ -148,30 +150,29 @@ function createQuickChatButton(rootElement) {
         }
     `;
 
-    // Append media styles dynamically
-    $('<style>').text(mediaStyles).appendTo('head');
+	// Append media styles dynamically
+	$("<style>").text(mediaStyles).appendTo("head");
 
+	// Load previously seen notifications from cookies
+	let previousNotificationIds = JSON.parse(getCookie("previousNotificationIds")) || [];
 
-    // Load previously seen notifications from cookies
-    let previousNotificationIds = JSON.parse(getCookie('previousNotificationIds')) || [];
+	// Load notifications and update the count every 10 seconds
+	loadNotifications(countElement);
+	setInterval(() => loadNotifications(countElement), 10000); // Set to sync every 10 seconds
 
-    // Load notifications and update the count every 10 seconds
-    loadNotifications(countElement);
-    setInterval(() => loadNotifications(countElement), 10000);  // Set to sync every 10 seconds
+	// Add listeners
+	addListeners();
 
-    // Add listeners
-    addListeners();
+	function playNotificationSound() {
+		console.log("Playing sound from:", notificationSound.src);
+		notificationSound.play().catch(function (error) {
+			console.error("Audio playback failed:", error);
+		});
+	}
 
-    function playNotificationSound() {
-        console.log('Playing sound from:', notificationSound.src);
-        notificationSound.play().catch(function (error) {
-            console.error('Audio playback failed:', error);
-        });
-    }
-
-    // Function to display a fancy toast notification at the top-center of the screen
-    function showToastNotification(message) {
-        const toast = $(`
+	// Function to display a fancy toast notification at the top-center of the screen
+	function showToastNotification(message) {
+		const toast = $(`
             <div class="toast-notification" style="
                 position: fixed;
                 top: -50px;
@@ -187,122 +188,138 @@ function createQuickChatButton(rootElement) {
                 opacity: 0;
                 transition: all 0.5s ease;
             ">
-                🎉 ${message}
+                ${message}
             </div>
         `);
 
-        $('body').append(toast);
+		$("body").append(toast);
 
-        // Show the toast with a slide-down animation
-        setTimeout(() => {
-            toast.css({
-                'top': '20px',
-                'opacity': '1'
-            });
-        }, 100);
+		// Show the toast with a slide-down animation
+		setTimeout(() => {
+			toast.css({
+				top: "20px",
+				opacity: "1",
+			});
+		}, 100);
 
-        // Hide the toast after 4 seconds with a slide-up animation
-        setTimeout(() => {
-            toast.css({
-                'top': '-50px',
-                'opacity': '0'
-            });
-            setTimeout(() => toast.remove(), 500); // Remove from DOM after fade out
-        }, 4000);
-    }
+		// Hide the toast after 4 seconds with a slide-up animation
+		setTimeout(() => {
+			toast.css({
+				top: "-50px",
+				opacity: "0",
+			});
+			setTimeout(() => toast.remove(), 500); // Remove from DOM after fade out
+		}, 4000);
+	}
 
-    // Load notifications and update the count
-    function loadNotifications(countElement, userTriggered = false) {
-        frappe.call({
-            method: "ppecon_erp.notification.get_unread_notifications",
-            callback: function (response) {
-                const notifications = response.message;
-                const notificationList = $('#notification-list');
-                notificationList.empty(); // Clear the list
+	// Load notifications and update the count
+	function loadNotifications(countElement, userTriggered = false) {
+		frappe.call({
+			method: "ppecon_erp.notification.get_unread_notifications",
+			callback: function (response) {
+				const notifications = response.message;
+				const notificationList = $("#notification-list");
+				notificationList.empty(); // Clear the list
 
-                if (notifications && notifications.length > 0) {
-                    // Get the current notification IDs
-                    const currentNotificationIds = notifications.map(notification => notification.name);
+				if (notifications && notifications.length > 0) {
+					// Get the current notification IDs
+					const currentNotificationIds = notifications.map(
+						(notification) => notification.name,
+					);
 
-                    // Compare current notifications with previous notifications
-                    const newNotifications = currentNotificationIds.filter(id => !previousNotificationIds.includes(id));
+					// Compare current notifications with previous notifications
+					const newNotifications = currentNotificationIds.filter(
+						(id) => !previousNotificationIds.includes(id),
+					);
 
-                    // If there are new notifications and it's not a user-triggered update, play the sound and show toast
-                    if (newNotifications.length > 0 && !userTriggered) {
-                        playNotificationSound();
-                        showToastNotification('New Notification! Something exciting just happened!');
-                    }
+					// If there are new notifications and it's not a user-triggered update, play the sound and show toast
+					if (newNotifications.length > 0 && !userTriggered) {
+						playNotificationSound();
+						showToastNotification(
+							"New Notification! Something exciting just happened!",
+						);
+					}
 
-                    // Update the previous notification IDs to the current ones and store in cookies
-                    previousNotificationIds = currentNotificationIds;
-                    setCookie('previousNotificationIds', JSON.stringify(previousNotificationIds), 1); // Store for 1 day
+					// Update the previous notification IDs to the current ones and store in cookies
+					previousNotificationIds = currentNotificationIds;
+					setCookie(
+						"previousNotificationIds",
+						JSON.stringify(previousNotificationIds),
+						1,
+					); // Store for 1 day
 
-                    // Update notification count
-                    countElement.text(notifications.length);
+					// Update notification count
+					countElement.text(notifications.length);
 
-                    // Add notifications to the modal body
-                    notifications.forEach(notification => {
-                        const timeAgo = timeSince(new Date(notification.creation));
+					// Add notifications to the modal body
+					notifications.forEach((notification) => {
+						const timeAgo = timeSince(new Date(notification.creation));
 
-                        const notificationItem = $(`
+						const notificationItem = $(`
                             <div class="notification-item" style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #ddd; cursor: pointer;">
                                 <div class="notification-content" style="flex-grow: 1; overflow: hidden;">
-                                    <strong style="font-size: 14px; color: #007bff;">${notification.subject || 'Notification'}</strong>
-                                    <p style="font-size: 12px; color: #555; margin: 0;">${notification.email_content || 'No content available.'}</p>
+                                    <strong style="font-size: 14px; color: #007bff;">${notification.subject || "Notification"}</strong>
+                                    <p style="font-size: 12px; color: #555; margin: 0;">${notification.email_content || "No content available."}</p>
                                     <span class="notification-time" style="font-size: 11px; color: #888;">${timeAgo}</span>
                                 </div>
                             </div>
                         `);
 
-                        // Mark as read and reload notifications (user-triggered)
-                        notificationItem.on('click', async function () {
-                            await markAsRead(notification.name);
-                            loadNotifications(countElement, true); // No sound since it's user-triggered
-                            window.location.href = `/app/${notification.document_type.toLowerCase()}/${notification.document_name}`;
-                        });
+						// Mark as read and reload notifications (user-triggered)
+						notificationItem.on("click", async function () {
+							await markAsRead(notification.name);
+							loadNotifications(countElement, true); // No sound since it's user-triggered
+							window.location.href = `/app/${notification.document_type.toLowerCase()}/${notification.document_name}`;
+						});
 
-                        notificationList.append(notificationItem);
-                    });
-                } else {
-                    notificationList.append('<p style="padding: 15px; text-align: center; color: #777;">No notifications available.</p>');
-                }
-            }
-        });
-    }
+						notificationList.append(notificationItem);
+					});
+				} else {
+					notificationList.append(
+						'<p style="padding: 15px; text-align: center; color: #777;">No notifications available.</p>',
+					);
+				}
+			},
+		});
+	}
 
-    // Helper function to calculate "time since" for each notification
-    function timeSince(date) {
-        const seconds = Math.floor((new Date() - date) / 1000);
-        let interval = Math.floor(seconds / 31536000);
-        if (interval > 1) return interval + " years ago";
-        interval = Math.floor(seconds / 2592000);
-        if (interval > 1) return interval + " months ago";
-        interval = Math.floor(seconds / 86400);
-        if (interval > 1) return interval + " days ago";
-        interval = Math.floor(seconds / 3600);
-        if (interval > 1) return interval + " hours ago";
-        interval = Math.floor(seconds / 60);
-        if (interval > 1) return interval + " minutes ago";
-        return Math.floor(seconds) + " seconds ago";
-    }
+	// Helper function to calculate "time since" for each notification
+	function timeSince(date) {
+		const seconds = Math.floor((new Date() - date) / 1000);
+		let interval = Math.floor(seconds / 31536000);
+		if (interval > 1) return interval + " years ago";
+		interval = Math.floor(seconds / 2592000);
+		if (interval > 1) return interval + " months ago";
+		interval = Math.floor(seconds / 86400);
+		if (interval > 1) return interval + " days ago";
+		interval = Math.floor(seconds / 3600);
+		if (interval > 1) return interval + " hours ago";
+		interval = Math.floor(seconds / 60);
+		if (interval > 1) return interval + " minutes ago";
+		return Math.floor(seconds) + " seconds ago";
+	}
 
-    // Mark notification as read and update the badge
-    function markAsRead(notificationName) {
-        return frappe.call({
-            method: "ppecon_erp.notification.mark_notification_as_read",
-            args: { notification_name: notificationName },
-            callback: function (response) {
-                // After marking as read, reload notifications without playing the sound
-                loadNotifications($('.count'), true);
-            }
-        });
-    }
+	// Mark notification as read and update the badge
+	function markAsRead(notificationName) {
+		return frappe.call({
+			method: "ppecon_erp.notification.mark_notification_as_read",
+			args: { notification_name: notificationName },
+			callback: function (response) {
+				// After marking as read, reload notifications without playing the sound
+				loadNotifications($(".count"), true);
+			},
+		});
+	}
 
-    function addListeners() {
-        window.addEventListener("quick_chat_child__close_dialog", function (data) {
-            $("#quick-chat-popup").modal("hide");
-        }, false);
-    }
+	function addListeners() {
+		window.addEventListener(
+			"quick_chat_child__close_dialog",
+			function (data) {
+				$("#quick-chat-popup").modal("hide");
+			},
+			false,
+		);
+	}
 }
 
 // Create the button and append it to the root element

@@ -8,37 +8,16 @@ def get_my_leave_balance():
     if user == "Guest":
         frappe.throw("User not logged in", frappe.AuthenticationError)
 
-    # User se employee nikalo
-    employee = frappe.db.get_value("Employee", {"user_id": user}, 
-                                    ["name", "employee_name", "date_of_joining", 
-                                     "custom_contract_period"], as_dict=1)
+    employee = frappe.db.get_value("Employee", {"user_id": user}, "name")
 
     if not employee:
         frappe.throw("No employee linked to this user")
 
     today_date = getdate(today())
+    leave_types = ["Annual Leave", "Sick Leave"]
+    result = {}
 
-    # Saare active leave types nikalo jinka allocation hai
-    allocations = frappe.db.sql("""
-        SELECT DISTINCT
-            la.leave_type,
-            la.name as allocation_name,
-            la.from_date,
-            la.to_date,
-            la.new_leaves_allocated,
-            la.total_leaves_allocated
-        FROM `tabLeave Allocation` la
-        WHERE la.employee = %s
-          AND la.docstatus = 1
-          AND la.from_date <= %s
-          AND la.to_date >= %s
-        ORDER BY la.leave_type, la.from_date DESC
-    """, (employee.name, today_date, today_date), as_dict=1)
-
-    result = []
-
-    for alloc in allocations:
-        # Ledger se total credited (allocation entries)
+    for leave_type in leave_types:
         credited = frappe.db.sql("""
             SELECT COALESCE(SUM(leaves), 0) as total
             FROM `tabLeave Ledger Entry`
@@ -48,9 +27,8 @@ def get_my_leave_balance():
               AND is_expired = 0
               AND from_date <= %s
               AND to_date >= %s
-        """, (employee.name, alloc.leave_type, today_date, today_date), as_dict=1)[0].total
+        """, (employee, leave_type, today_date, today_date), as_dict=1)[0].total
 
-        # Ledger se total debited (leave application entries)
         debited = frappe.db.sql("""
             SELECT COALESCE(SUM(leaves), 0) as total
             FROM `tabLeave Ledger Entry`
@@ -59,64 +37,14 @@ def get_my_leave_balance():
               AND transaction_type = 'Leave Application'
               AND is_expired = 0
               AND from_date <= %s
-        """, (employee.name, alloc.leave_type, today_date), as_dict=1)[0].total
+        """, (employee, leave_type, today_date), as_dict=1)[0].total
 
-        # Current balance = credited + debited (debited negative hota hai)
-        balance = flt(credited) + flt(debited)
+        balance = round(flt(credited) + flt(debited), 2)
 
-        # Last approved leave
-        last_leave = frappe.db.sql("""
-            SELECT from_date, to_date, total_leave_days
-            FROM `tabLeave Application`
-            WHERE employee = %s
-              AND leave_type = %s
-              AND status = 'Approved'
-              AND docstatus = 1
-            ORDER BY to_date DESC
-            LIMIT 1
-        """, (employee.name, alloc.leave_type), as_dict=1)
+        key = "annual_leave" if leave_type == "Annual Leave" else "sick_leave"
+        result[key] = float(balance)  # hamesha float aayega — 20.0, 22.5, 8.0
 
-        # Pending leaves (submitted but not approved)
-        pending = frappe.db.sql("""
-            SELECT COALESCE(SUM(total_leave_days), 0) as total
-            FROM `tabLeave Application`
-            WHERE employee = %s
-              AND leave_type = %s
-              AND status = 'Open'
-              AND docstatus = 0
-        """, (employee.name, alloc.leave_type), as_dict=1)[0].total
-
-        result.append({
-            "leave_type": alloc.leave_type,
-            "allocation_from": str(alloc.from_date),
-            "allocation_to": str(alloc.to_date),
-            "total_allocated": flt(credited),
-            "leaves_taken": abs(flt(debited)),
-            "pending_leaves": flt(pending),
-            "balance": round(flt(balance), 2)
-        })
-
-    # Contract info
-    contract = str(employee.custom_contract_period or "").strip().lower()
-    if contract == "two year":
-        monthly_accrual = round(45 / 24, 4)
-        total_entitlement = 45
-    else:
-        monthly_accrual = round(30 / 12, 4)
-        total_entitlement = 30
-
-    return {
-        "employee_id": employee.name,
-        "employee_name": employee.employee_name,
-        "date_of_joining": str(employee.date_of_joining),
-        "contract_period": employee.custom_contract_period,
-        "monthly_accrual": monthly_accrual,
-        "total_entitlement": total_entitlement,
-        "as_on_date": str(today_date),
-        "leave_balances": result
-    }
-
-
+    return result
 
 
 
