@@ -93,6 +93,7 @@ def update_monthly_leave_allocations():
     print("Done. All committed.")
 
 
+
 def process_employee(emp, month_start, month_end, total_days_in_month):
     contract = str(emp.get("custom_contract_period") or "").strip().lower()
 
@@ -275,3 +276,4 @@ def create_new_allocation(emp, leave_type, accrual_amount, fiscal_year):
 
 
     
+
