@@ -177,6 +177,15 @@ scheduler_events = {
         ]
     }
 }
+
+
+
+
+
+
+
+
+
 # scheduler_events = {
 # 	"all": [
 # 		"ppecon_erp.tasks.all"
