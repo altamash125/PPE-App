@@ -187,7 +187,7 @@ scheduler_events = {
 
 
 # scheduler_events = {
-# 	"all": [
+# 	"all": [h
 # 		"ppecon_erp.tasks.all"
 # 	],
 # 	"daily": [

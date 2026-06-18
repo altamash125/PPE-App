@@ -235,9 +235,9 @@ function createQuickChatButton(rootElement) {
 					// If there are new notifications and it's not a user-triggered update, play the sound and show toast
 					if (newNotifications.length > 0 && !userTriggered) {
 						playNotificationSound();
-						showToastNotification(
-							"New Notification! Something exciting just happened!",
-						);
+						// showToastNotification(
+						// 	"New Notification! Something exciting just happened!",
+						// );
 					}
 
 					// Update the previous notification IDs to the current ones and store in cookies

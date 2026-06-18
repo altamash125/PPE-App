@@ -52,3 +52,4 @@ def get_my_eosb():
         "eosb_amount": eosb,
         "is_final":   is_final,
     }
+
