@@ -51,14 +51,14 @@ def get_my_leave_balance():
 
 #Leave Balance API
 import frappe
-from frappe.utils import today, getdate, add_months
+from frappe.utils import today, getdate, add_months, flt
 from datetime import date
 import calendar
 
+
 def update_monthly_leave_allocations():
     today_date = getdate(today())
-    first_of_this_month = today_date
-    first_of_last_month = add_months(first_of_this_month, -1)
+    first_of_last_month = add_months(today_date, -1)
 
     last_month_total_days = calendar.monthrange(
         first_of_last_month.year,
@@ -93,22 +93,18 @@ def update_monthly_leave_allocations():
     print("Done. All committed.")
 
 
-
 def process_employee(emp, month_start, month_end, total_days_in_month):
     contract = str(emp.get("custom_contract_period") or "").strip().lower()
 
-    # Two year contract check
     if contract in ["two years", "two year", "2 years", "2 year"]:
         annual_days = 45.0
         contract_months = 24
     else:
-        # Default: one year
         annual_days = 30.0
         contract_months = 12
 
     full_month_accrual = round(annual_days / contract_months, 4)
 
-    # Joining date check
     if not emp.date_of_joining:
         print(f"SKIP {emp.name}: no joining date")
         return
@@ -121,7 +117,6 @@ def process_employee(emp, month_start, month_end, total_days_in_month):
 
     effective_start = max(joining_date, month_start)
 
-    # Is month mein approved annual leaves check karo
     approved_leaves = frappe.db.sql("""
         SELECT from_date, to_date, total_leave_days
         FROM `tabLeave Application`
@@ -129,20 +124,11 @@ def process_employee(emp, month_start, month_end, total_days_in_month):
           AND leave_type = 'Annual Leave'
           AND status = 'Approved'
           AND docstatus = 1
-          AND (
-              from_date BETWEEN %s AND %s
-              OR to_date BETWEEN %s AND %s
-              OR (from_date <= %s AND to_date >= %s)
-          )
+          AND from_date <= %s
+          AND to_date >= %s
         ORDER BY from_date ASC
-    """, (
-        emp.name,
-        month_start, month_end,
-        month_start, month_end,
-        month_start, month_end
-    ), as_dict=1)
+    """, (emp.name, month_end, month_start), as_dict=1)
 
-    # Eligible days calculate karo (leave days minus)
     eligible_days = calculate_eligible_days(effective_start, month_end, approved_leaves)
     total_days = (month_end - effective_start).days + 1
 
@@ -150,7 +136,6 @@ def process_employee(emp, month_start, month_end, total_days_in_month):
         print(f"SKIP {emp.name}: 0 eligible days (all on leave this month)")
         return
 
-    # Proportion ke hisaab se accrual
     accrual_amount = round((eligible_days / total_days) * full_month_accrual, 4)
 
     print(f"{emp.employee_name} | contract={contract} | "
@@ -191,6 +176,7 @@ def update_leave_allocation(emp, accrual_amount, month_start, month_end):
         print(f"SKIP {emp.name}: no fiscal year found")
         return
 
+    # FIX: also fetch to_date and carry forwarded count
     allocation = frappe.db.get_value(
         "Leave Allocation",
         filters={
@@ -200,56 +186,63 @@ def update_leave_allocation(emp, accrual_amount, month_start, month_end):
             "from_date": ("<=", month_end),
             "to_date": (">=", month_start)
         },
-        fieldname=["name", "new_leaves_allocated", "total_leaves_allocated"],
+        fieldname=["name", "new_leaves_allocated", "total_leaves_allocated",
+                   "to_date", "carry_forwarded_leaves_count"],
         as_dict=1
     )
 
-    if allocation:
-        new_total = round((allocation.new_leaves_allocated or 0) + accrual_amount, 4)
-        frappe.db.set_value(
-            "Leave Allocation",
-            allocation.name,
-            {
-                "new_leaves_allocated": new_total,
-                "total_leaves_allocated": new_total
-            }
-        )
-        sync_leave_ledger(emp.name, leave_type, allocation.name,
-                          accrual_amount, month_start, month_end)
-        print(f"  → Updated allocation {allocation.name} | new total: {new_total}")
-    else:
+    if not allocation:
         create_new_allocation(emp, leave_type, accrual_amount, fiscal_year)
+        return
 
-
-def sync_leave_ledger(employee, leave_type, allocation_name,
-                       accrual_amount, month_start, month_end):
+    # FIX: duplicate check FIRST — if the ledger entry for this month
+    # already exists, skip BOTH ledger and allocation update.
+    # Uniqueness key = allocation + from_date (month_start).
     existing = frappe.db.exists("Leave Ledger Entry", {
-        "employee": employee,
+        "employee": emp.name,
         "leave_type": leave_type,
         "transaction_type": "Leave Allocation",
-        "transaction_name": allocation_name,
-        "from_date": month_start,
-        "to_date": month_end
+        "transaction_name": allocation.name,
+        "from_date": month_start
     })
 
     if existing:
-        print(f"  → Ledger entry already exists, skipping duplicate")
+        print(f"  → Accrual for {month_start} already posted, skipping {emp.name}")
         return
 
+    # Update the allocation document
+    new_leaves = round(flt(allocation.new_leaves_allocated) + accrual_amount, 4)
+    new_total = round(new_leaves + flt(allocation.carry_forwarded_leaves_count), 4)
+
+    frappe.db.set_value(
+        "Leave Allocation",
+        allocation.name,
+        {
+            "new_leaves_allocated": new_leaves,
+            "total_leaves_allocated": new_total
+        }
+    )
+
+    # FIX: to_date must be the allocation's to_date (fiscal year end),
+    # NOT month_end. ERPNext's get_leave_balance_on only counts allocation
+    # ledger entries where from_date <= today AND to_date >= today.
     ledger = frappe.get_doc({
         "doctype": "Leave Ledger Entry",
-        "employee": employee,
+        "employee": emp.name,
         "leave_type": leave_type,
         "transaction_type": "Leave Allocation",
-        "transaction_name": allocation_name,
+        "transaction_name": allocation.name,
         "leaves": accrual_amount,
         "from_date": month_start,
-        "to_date": month_end,
+        "to_date": allocation.to_date,   # ← the critical fix
         "is_carry_forward": 0,
-        "is_expired": 0
+        "is_expired": 0,
+        "is_lwp": 0
     })
     ledger.insert(ignore_permissions=True)
-    print(f"  → Ledger entry created: +{accrual_amount}")
+    ledger.submit()
+
+    print(f"  → Updated allocation {allocation.name} | ledger +{accrual_amount} | new total: {new_total}")
 
 
 def create_new_allocation(emp, leave_type, accrual_amount, fiscal_year):
@@ -271,9 +264,31 @@ def create_new_allocation(emp, leave_type, accrual_amount, fiscal_year):
         "carry_forward": 0
     })
     alloc.insert(ignore_permissions=True)
-    alloc.submit()
+    alloc.submit()  # submit auto-creates the ledger entry with correct dates
     print(f"  → New allocation created: {accrual_amount} days")
 
 
-    
+def fix_old_ledger_entries():
+    """
+    One-time patch: repair ledger entries already created by the old scheduler
+    with wrong to_date (= month end). Sets to_date = allocation's to_date so
+    ERPNext starts counting them in the balance.
+    Run once via bench console: 
+        from your_app.your_module import fix_old_ledger_entries
+        fix_old_ledger_entries()
+    """
+    entries = frappe.db.sql("""
+        SELECT lle.name, lle.transaction_name, la.to_date AS alloc_to_date
+        FROM `tabLeave Ledger Entry` lle
+        JOIN `tabLeave Allocation` la ON la.name = lle.transaction_name
+        WHERE lle.transaction_type = 'Leave Allocation'
+          AND lle.leaves > 0
+          AND lle.to_date < la.to_date
+    """, as_dict=1)
 
+    for e in entries:
+        frappe.db.set_value("Leave Ledger Entry", e.name, "to_date", e.alloc_to_date)
+        print(f"Fixed {e.name}: to_date → {e.alloc_to_date}")
+
+    frappe.db.commit()
+    print(f"Done. {len(entries)} entries fixed.")
