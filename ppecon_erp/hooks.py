@@ -144,13 +144,8 @@ app_include_js = "notification.bundle.js"
 # ---------------
 doc_events = {
     "ToDo": {
-        # "on_save": "ppecon_erp.todo.todo.notify_assigned_user"
-    },
-    "Inventory Management": {
-        "after_insert": "ppecon_erp.inventory_management.qr_handler.generate_inventory_qr",
-        "on_update": "ppecon_erp.inventory_management.qr_handler.generate_inventory_qr",
-        "on_trash": "ppecon_erp.inventory_management.qr_handler.delete_existing_qr"
-    },
+        "after_insert": "ppecon_erp.todo.todo.notify_assigned_user"
+    }
 }
 
 
