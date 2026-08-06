@@ -31,7 +31,7 @@ def notify_assigned_user(doc, method):
         email_html = f"""
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.5;">
             <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
-                <h2 style="color: #0d6efd; margin-bottom: 10px;">📝 New ToDo Assigned</h2>
+                <h2 style="color: #0d6efd; margin-bottom: 10px;">📝 New Task Assigned</h2>
                 <p>Hello <b>{doc.allocated_to}</b>,</p>
                 <p>You have been assigned a new task. Here are the details:</p>
                 <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
