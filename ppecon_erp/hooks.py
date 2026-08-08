@@ -145,7 +145,19 @@ app_include_js = "notification.bundle.js"
 doc_events = {
     "ToDo": {
         "after_insert": "ppecon_erp.todo.todo.notify_assigned_user"
-    }
+    },
+     "Leave Application": {
+        "on_submit": "ppecon_erp.firebase_notification.events.leave_application_submitted",
+    },
+    "Employee Advance": {
+        "on_submit": "ppecon_erp.firebase_notification.events.employee_advance_submitted",
+    },
+    "Travel Request": {
+        "on_submit": "ppecon_erp.firebase_notification.events.travel_request_submitted",
+    },
+    "Attendance Request": {
+        "on_submit": "ppecon_erp.firebase_notification.events.attendance_request_submitted",
+    },
 }
 
 
