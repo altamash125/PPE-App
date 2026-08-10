@@ -1,0 +1,362 @@
+<!doctype html>
+<html>
+	<body
+		style="
+			margin: 0;
+			padding: 0;
+			background-color: #f4f5f7;
+			font-family: Arial, Helvetica, sans-serif;
+		"
+	>
+		<table
+			width="100%"
+			cellpadding="0"
+			cellspacing="0"
+			style="background-color: #f4f5f7; padding: 24px 0"
+		>
+			<tr>
+				<td align="center">
+					<table
+						width="600"
+						cellpadding="0"
+						cellspacing="0"
+						style="
+							background: #ffffff;
+							border-radius: 8px;
+							overflow: hidden;
+							box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+						"
+					>
+						<!-- Header -->
+						<tr>
+							<td style="background: #b91c1c; padding: 20px 32px">
+								<table width="100%">
+									<tr>
+										<td
+											style="
+												color: #ffffff;
+												font-size: 18px;
+												font-weight: bold;
+											"
+										>
+											⚠️ Non Conformance Report
+										</td>
+										<td align="right" style="color: #fecaca; font-size: 13px">
+											PPECON IMS
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+
+						<!-- Body -->
+						<tr>
+							<td style="padding: 28px 32px">
+								<p style="font-size: 15px; color: #111827; margin: 0 0 6px">
+									Dear <b>{{ doc.issued_to_name or doc.issued_to }}</b>,
+								</p>
+								<p
+									style="
+										font-size: 14px;
+										color: #374151;
+										margin: 0 0 20px;
+										line-height: 1.6;
+									"
+								>
+									<b style="color: #b91c1c">{{ doc.issuer_name }}</b> has issued
+									a Non Conformance Report to you. Please review the details
+									below and take necessary action.
+								</p>
+
+								<!-- Details Card -->
+								<table
+									width="100%"
+									cellpadding="0"
+									cellspacing="0"
+									style="
+										border: 1px solid #e5e7eb;
+										border-radius: 6px;
+										font-size: 13.5px;
+										color: #111827;
+									"
+								>
+									<tr>
+										<td
+											style="
+												padding: 10px 14px;
+												background: #f9fafb;
+												width: 38%;
+												border-bottom: 1px solid #e5e7eb;
+											"
+										>
+											<b>NCR No.</b>
+										</td>
+										<td
+											style="
+												padding: 10px 14px;
+												border-bottom: 1px solid #e5e7eb;
+											"
+										>
+											{{ doc.name }}
+										</td>
+									</tr>
+									<tr>
+										<td
+											style="
+												padding: 10px 14px;
+												background: #f9fafb;
+												border-bottom: 1px solid #e5e7eb;
+											"
+										>
+											<b>Subject</b>
+										</td>
+										<td
+											style="
+												padding: 10px 14px;
+												border-bottom: 1px solid #e5e7eb;
+											"
+										>
+											{{ doc.subject }}
+										</td>
+									</tr>
+									<tr>
+										<td
+											style="
+												padding: 10px 14px;
+												background: #f9fafb;
+												border-bottom: 1px solid #e5e7eb;
+											"
+										>
+											<b>Issued By</b>
+										</td>
+										<td
+											style="
+												padding: 10px 14px;
+												border-bottom: 1px solid #e5e7eb;
+											"
+										>
+											{{ doc.issuer_name }}
+										</td>
+									</tr>
+									<tr>
+										<td
+											style="
+												padding: 10px 14px;
+												background: #f9fafb;
+												border-bottom: 1px solid #e5e7eb;
+											"
+										>
+											<b>NC Date</b>
+										</td>
+										<td
+											style="
+												padding: 10px 14px;
+												border-bottom: 1px solid #e5e7eb;
+											"
+										>
+											{{ frappe.utils.formatdate(doc.nc_date, "dd MMM yyyy")
+											if doc.nc_date else "-" }}
+										</td>
+									</tr>
+									<tr>
+										<td
+											style="
+												padding: 10px 14px;
+												background: #f9fafb;
+												border-bottom: 1px solid #e5e7eb;
+											"
+										>
+											<b>Department</b>
+										</td>
+										<td
+											style="
+												padding: 10px 14px;
+												border-bottom: 1px solid #e5e7eb;
+											"
+										>
+											{{ doc.department or "-" }}
+										</td>
+									</tr>
+									<tr>
+										<td
+											style="
+												padding: 10px 14px;
+												background: #f9fafb;
+												border-bottom: 1px solid #e5e7eb;
+											"
+										>
+											<b>Project</b>
+										</td>
+										<td
+											style="
+												padding: 10px 14px;
+												border-bottom: 1px solid #e5e7eb;
+											"
+										>
+											{{ doc.project or "-" }}
+										</td>
+									</tr>
+									<tr>
+										<td
+											style="
+												padding: 10px 14px;
+												background: #f9fafb;
+												border-bottom: 1px solid #e5e7eb;
+											"
+										>
+											<b>Site</b>
+										</td>
+										<td
+											style="
+												padding: 10px 14px;
+												border-bottom: 1px solid #e5e7eb;
+											"
+										>
+											{{ doc.site or "-" }}
+										</td>
+									</tr>
+									<tr>
+										<td style="padding: 10px 14px; background: #f9fafb">
+											<b>Criticality</b>
+										</td>
+										<td style="padding: 10px 14px">
+											{% set crit = doc.non_conformance_criticality or "-" %}
+											{% if crit == "Major" %}
+											<span
+												style="
+													background: #fee2e2;
+													color: #b91c1c;
+													padding: 3px 10px;
+													border-radius: 12px;
+													font-size: 12px;
+													font-weight: bold;
+												"
+												>{{ crit }}</span
+											>
+											{% elif crit == "Minor" %}
+											<span
+												style="
+													background: #fef3c7;
+													color: #b45309;
+													padding: 3px 10px;
+													border-radius: 12px;
+													font-size: 12px;
+													font-weight: bold;
+												"
+												>{{ crit }}</span
+											>
+											{% else %}
+											<span
+												style="
+													background: #e5e7eb;
+													color: #374151;
+													padding: 3px 10px;
+													border-radius: 12px;
+													font-size: 12px;
+												"
+												>{{ crit }}</span
+											>
+											{% endif %}
+										</td>
+									</tr>
+								</table>
+
+								<!-- Description -->
+								<p
+									style="
+										font-size: 13px;
+										color: #6b7280;
+										margin: 22px 0 6px;
+										text-transform: uppercase;
+										letter-spacing: 0.5px;
+									"
+								>
+									<b>Non-conformance Description</b>
+								</p>
+								<div
+									style="
+										border-left: 4px solid #b91c1c;
+										background: #fef2f2;
+										padding: 12px 16px;
+										font-size: 13.5px;
+										color: #111827;
+										line-height: 1.6;
+										border-radius: 0 6px 6px 0;
+									"
+								>
+									{{ doc.non_conformance_description }}
+								</div>
+
+								<p
+									style="
+										font-size: 13.5px;
+										color: #374151;
+										margin: 22px 0 0;
+										line-height: 1.6;
+									"
+								>
+									Kindly fill in the <b>Root Cause</b>,
+									<b>Corrective Action</b> and <b>Preventive Action</b>, then
+									<b>Approve</b> or <b>Reject</b> this NCR.
+								</p>
+
+								<!-- Button -->
+								<table
+									width="100%"
+									cellpadding="0"
+									cellspacing="0"
+									style="margin-top: 26px"
+								>
+									<tr>
+										<td align="center">
+											<a
+												href="{{ frappe.utils.get_url() }}/app/non-conformance/{{ doc.name }}"
+												style="
+													background: #b91c1c;
+													color: #ffffff;
+													text-decoration: none;
+													padding: 12px 36px;
+													border-radius: 6px;
+													font-size: 14px;
+													font-weight: bold;
+													display: inline-block;
+												"
+											>
+												Open NCR &rarr;
+											</a>
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+
+						<!-- Footer -->
+						<tr>
+							<td
+								style="
+									background: #f9fafb;
+									padding: 16px 32px;
+									border-top: 1px solid #e5e7eb;
+								"
+							>
+								<p
+									style="
+										font-size: 11.5px;
+										color: #9ca3af;
+										margin: 0;
+										text-align: center;
+										line-height: 1.5;
+									"
+								>
+									This is an automated notification from PPECON Integrated
+									Management System.<br />
+									Please do not reply to this email.
+								</p>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>

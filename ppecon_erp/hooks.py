@@ -158,7 +158,12 @@ doc_events = {
     "Attendance Request": {
         "on_submit": "ppecon_erp.firebase_notification.events.attendance_request_submitted",
     },
+
+    "Non Conformance": {
+        "on_update": "ppecon_erp.notifications.nc_email.send_nc_review_email",
+    }
 }
+
 
 
 # ---------------
