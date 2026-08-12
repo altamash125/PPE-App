@@ -1,3 +1,5 @@
+{% set issuer_display = issuer or doc.issuer_name or doc.owner %}
+{% set nc_url = url or (frappe.utils.get_url() ~ "/app/non-conformance/" ~ doc.name) %}
 <!doctype html>
 <html>
 	<body
@@ -63,7 +65,7 @@
 										line-height: 1.6;
 									"
 								>
-									<b style="color: #b91c1c">{{ doc.issuer_name }}</b> has issued
+									<b style="color: #b91c1c">{{ issuer_display }}</b> has issued
 									a Non Conformance Report to you. Please review the details
 									below and take necessary action.
 								</p>
@@ -135,7 +137,7 @@
 												border-bottom: 1px solid #e5e7eb;
 											"
 										>
-											{{ doc.issuer_name }}
+											{{ issuer_display }}
 										</td>
 									</tr>
 									<tr>
@@ -297,7 +299,8 @@
 								>
 									Kindly fill in the <b>Root Cause</b>,
 									<b>Corrective Action</b> and <b>Preventive Action</b>, then
-									<b>Approve</b> or <b>Reject</b> this NCR.
+									click <b>Submit Response</b> from the <i>Actions</i> menu.
+									Your response will be reviewed by {{ issuer_display }}.
 								</p>
 
 								<!-- Button -->
@@ -309,8 +312,8 @@
 								>
 									<tr>
 										<td align="center">
-											<a
-												href="{{ frappe.utils.get_url() }}/app/non-conformance/{{ doc.name }}"
+											
+												href="{{ nc_url }}"
 												style="
 													background: #b91c1c;
 													color: #ffffff;

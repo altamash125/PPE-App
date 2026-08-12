@@ -160,8 +160,12 @@ doc_events = {
     },
 
     "Non Conformance": {
-        "on_update": "ppecon_erp.notifications.nc_email.send_nc_review_email",
-    }
+    "before_insert": "ppecon_erp.notifications.nc_email.set_issuer",
+    "validate": "ppecon_erp.notifications.nc_email.validate_nc_workflow",
+    "before_update_after_submit": "ppecon_erp.notifications.nc_email.validate_nc_workflow",
+    "on_update": "ppecon_erp.notifications.nc_email.send_nc_review_email",
+    "on_update_after_submit": "ppecon_erp.notifications.nc_email.send_nc_review_email",
+  }
 }
 
 
