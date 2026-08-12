@@ -1,49 +1,113 @@
-{% set issuer_display = issuer or doc.issuer_name or doc.owner %}
-{% set nc_url = url or (frappe.utils.get_url() ~ "/app/non-conformance/" ~ doc.name) %}
+{% set issuer_display = issuer or doc.issuer_name or doc.owner %} {% set nc_url = url or
+(frappe.utils.get_url() ~ "/app/non-conformance/" ~ doc.name) %}
+
 <!doctype html>
 <html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>NCR Notification</title>
+		<style>
+			/* --- Styles for modern email clients --- */
+			body {
+				margin: 0;
+				padding: 0;
+				background-color: #f4f6f9;
+				font-family: "Inter", Arial, Helvetica, sans-serif;
+				-webkit-font-smoothing: antialiased;
+				font-weight: 400;
+				line-height: 1.6;
+			}
+			/* --- Responsive container --- */
+			.email-container {
+				max-width: 600px;
+				margin: 0 auto;
+				background: #ffffff;
+				border-radius: 12px;
+				overflow: hidden;
+				box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+			}
+			/* --- Responsive adjustments for mobile --- */
+			@media screen and (max-width: 600px) {
+				.email-container {
+					width: 100% !important;
+					border-radius: 0 !important;
+				}
+				.content-padding {
+					padding: 24px 20px !important;
+				}
+				.header-padding {
+					padding: 16px 20px !important;
+				}
+				.stacked-cell {
+					display: block;
+					width: 100% !important;
+					padding: 10px 14px !important;
+				}
+				.stacked-cell-label {
+					background: #f9fafb !important;
+					border-bottom: none !important;
+				}
+			}
+		</style>
+	</head>
 	<body
 		style="
 			margin: 0;
 			padding: 0;
-			background-color: #f4f5f7;
-			font-family: Arial, Helvetica, sans-serif;
+			background-color: #f4f6f9;
+			font-family: &quot;Inter&quot;, Arial, Helvetica, sans-serif;
 		"
 	>
+		<!-- Main wrapper table for email clients -->
 		<table
 			width="100%"
 			cellpadding="0"
 			cellspacing="0"
-			style="background-color: #f4f5f7; padding: 24px 0"
+			style="background-color: #f4f6f9; padding: 32px 0"
 		>
 			<tr>
 				<td align="center">
+					<!-- Email Container -->
 					<table
+						class="email-container"
 						width="600"
 						cellpadding="0"
 						cellspacing="0"
 						style="
+							max-width: 600px;
 							background: #ffffff;
-							border-radius: 8px;
+							border-radius: 12px;
 							overflow: hidden;
-							box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+							box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
 						"
 					>
-						<!-- Header -->
+						<!-- === HEADER === -->
 						<tr>
-							<td style="background: #b91c1c; padding: 20px 32px">
+							<td
+								class="header-padding"
+								style="background: #b91c1c; padding: 20px 32px"
+							>
 								<table width="100%">
 									<tr>
 										<td
 											style="
 												color: #ffffff;
-												font-size: 18px;
-												font-weight: bold;
+												font-size: 17px;
+												font-weight: 600;
+												letter-spacing: -0.2px;
 											"
 										>
-											⚠️ Non Conformance Report
+											⚠️ Non-Conformance Report
 										</td>
-										<td align="right" style="color: #fecaca; font-size: 13px">
+										<td
+											align="right"
+											style="
+												color: #fecaca;
+												font-size: 13px;
+												font-weight: 500;
+											"
+										>
 											PPECON IMS
 										</td>
 									</tr>
@@ -51,49 +115,63 @@
 							</td>
 						</tr>
 
-						<!-- Body -->
+						<!-- === BODY === -->
 						<tr>
-							<td style="padding: 28px 32px">
-								<p style="font-size: 15px; color: #111827; margin: 0 0 6px">
+							<td class="content-padding" style="padding: 28px 32px 32px">
+								<!-- Greeting -->
+								<p
+									style="
+										font-size: 15px;
+										color: #111827;
+										margin: 0 0 4px;
+										font-weight: 500;
+									"
+								>
 									Dear <b>{{ doc.issued_to_name or doc.issued_to }}</b>,
 								</p>
 								<p
 									style="
 										font-size: 14px;
 										color: #374151;
-										margin: 0 0 20px;
+										margin: 0 0 24px;
 										line-height: 1.6;
 									"
 								>
-									<b style="color: #b91c1c">{{ issuer_display }}</b> has issued
-									a Non Conformance Report to you. Please review the details
-									below and take necessary action.
+									<b style="color: #b91c1c">{{ issuer_display }}</b> has issued a
+									Non-Conformance Report requiring your attention. Please review
+									the details below and submit your response.
 								</p>
 
-								<!-- Details Card -->
+								<!-- === DETAILS CARD === -->
 								<table
 									width="100%"
 									cellpadding="0"
 									cellspacing="0"
 									style="
 										border: 1px solid #e5e7eb;
-										border-radius: 6px;
-										font-size: 13.5px;
+										border-radius: 8px;
+										font-size: 14px;
 										color: #111827;
+										margin-bottom: 22px;
 									"
 								>
+									<!-- NCR No. -->
 									<tr>
 										<td
+											class="stacked-cell stacked-cell-label"
 											style="
 												padding: 10px 14px;
-												background: #f9fafb;
+												background: #f8fafc;
 												width: 38%;
 												border-bottom: 1px solid #e5e7eb;
+												font-weight: 600;
+												color: #1e293b;
 											"
 										>
-											<b>NCR No.</b>
+											NCR No.
 										</td>
 										<td
+											class="stacked-cell"
 											style="
 												padding: 10px 14px;
 												border-bottom: 1px solid #e5e7eb;
@@ -102,17 +180,22 @@
 											{{ doc.name }}
 										</td>
 									</tr>
+									<!-- Subject -->
 									<tr>
 										<td
+											class="stacked-cell stacked-cell-label"
 											style="
 												padding: 10px 14px;
-												background: #f9fafb;
+												background: #f8fafc;
 												border-bottom: 1px solid #e5e7eb;
+												font-weight: 600;
+												color: #1e293b;
 											"
 										>
-											<b>Subject</b>
+											Subject
 										</td>
 										<td
+											class="stacked-cell"
 											style="
 												padding: 10px 14px;
 												border-bottom: 1px solid #e5e7eb;
@@ -121,17 +204,22 @@
 											{{ doc.subject }}
 										</td>
 									</tr>
+									<!-- Issued By -->
 									<tr>
 										<td
+											class="stacked-cell stacked-cell-label"
 											style="
 												padding: 10px 14px;
-												background: #f9fafb;
+												background: #f8fafc;
 												border-bottom: 1px solid #e5e7eb;
+												font-weight: 600;
+												color: #1e293b;
 											"
 										>
-											<b>Issued By</b>
+											Issued By
 										</td>
 										<td
+											class="stacked-cell"
 											style="
 												padding: 10px 14px;
 												border-bottom: 1px solid #e5e7eb;
@@ -140,17 +228,22 @@
 											{{ issuer_display }}
 										</td>
 									</tr>
+									<!-- NC Date -->
 									<tr>
 										<td
+											class="stacked-cell stacked-cell-label"
 											style="
 												padding: 10px 14px;
-												background: #f9fafb;
+												background: #f8fafc;
 												border-bottom: 1px solid #e5e7eb;
+												font-weight: 600;
+												color: #1e293b;
 											"
 										>
-											<b>NC Date</b>
+											NC Date
 										</td>
 										<td
+											class="stacked-cell"
 											style="
 												padding: 10px 14px;
 												border-bottom: 1px solid #e5e7eb;
@@ -160,17 +253,22 @@
 											if doc.nc_date else "-" }}
 										</td>
 									</tr>
+									<!-- Department -->
 									<tr>
 										<td
+											class="stacked-cell stacked-cell-label"
 											style="
 												padding: 10px 14px;
-												background: #f9fafb;
+												background: #f8fafc;
 												border-bottom: 1px solid #e5e7eb;
+												font-weight: 600;
+												color: #1e293b;
 											"
 										>
-											<b>Department</b>
+											Department
 										</td>
 										<td
+											class="stacked-cell"
 											style="
 												padding: 10px 14px;
 												border-bottom: 1px solid #e5e7eb;
@@ -179,17 +277,22 @@
 											{{ doc.department or "-" }}
 										</td>
 									</tr>
+									<!-- Project -->
 									<tr>
 										<td
+											class="stacked-cell stacked-cell-label"
 											style="
 												padding: 10px 14px;
-												background: #f9fafb;
+												background: #f8fafc;
 												border-bottom: 1px solid #e5e7eb;
+												font-weight: 600;
+												color: #1e293b;
 											"
 										>
-											<b>Project</b>
+											Project
 										</td>
 										<td
+											class="stacked-cell"
 											style="
 												padding: 10px 14px;
 												border-bottom: 1px solid #e5e7eb;
@@ -198,17 +301,22 @@
 											{{ doc.project or "-" }}
 										</td>
 									</tr>
+									<!-- Site -->
 									<tr>
 										<td
+											class="stacked-cell stacked-cell-label"
 											style="
 												padding: 10px 14px;
-												background: #f9fafb;
+												background: #f8fafc;
 												border-bottom: 1px solid #e5e7eb;
+												font-weight: 600;
+												color: #1e293b;
 											"
 										>
-											<b>Site</b>
+											Site
 										</td>
 										<td
+											class="stacked-cell"
 											style="
 												padding: 10px 14px;
 												border-bottom: 1px solid #e5e7eb;
@@ -217,44 +325,57 @@
 											{{ doc.site or "-" }}
 										</td>
 									</tr>
+									<!-- Criticality -->
 									<tr>
-										<td style="padding: 10px 14px; background: #f9fafb">
-											<b>Criticality</b>
+										<td
+											class="stacked-cell stacked-cell-label"
+											style="
+												padding: 10px 14px;
+												background: #f8fafc;
+												font-weight: 600;
+												color: #1e293b;
+											"
+										>
+											Criticality
 										</td>
-										<td style="padding: 10px 14px">
+										<td class="stacked-cell" style="padding: 10px 14px">
 											{% set crit = doc.non_conformance_criticality or "-" %}
 											{% if crit == "Major" %}
 											<span
 												style="
 													background: #fee2e2;
-													color: #b91c1c;
-													padding: 3px 10px;
-													border-radius: 12px;
+													color: #991b1b;
+													padding: 3px 12px;
+													border-radius: 20px;
 													font-size: 12px;
-													font-weight: bold;
+													font-weight: 600;
+													white-space: nowrap;
 												"
 												>{{ crit }}</span
 											>
 											{% elif crit == "Minor" %}
 											<span
 												style="
-													background: #fef3c7;
-													color: #b45309;
-													padding: 3px 10px;
-													border-radius: 12px;
+													background: #fef9c3;
+													color: #854d0e;
+													padding: 3px 12px;
+													border-radius: 20px;
 													font-size: 12px;
-													font-weight: bold;
+													font-weight: 600;
+													white-space: nowrap;
 												"
 												>{{ crit }}</span
 											>
 											{% else %}
 											<span
 												style="
-													background: #e5e7eb;
-													color: #374151;
-													padding: 3px 10px;
-													border-radius: 12px;
+													background: #f1f5f9;
+													color: #475569;
+													padding: 3px 12px;
+													border-radius: 20px;
 													font-size: 12px;
+													font-weight: 500;
+													white-space: nowrap;
 												"
 												>{{ crit }}</span
 											>
@@ -263,66 +384,72 @@
 									</tr>
 								</table>
 
-								<!-- Description -->
+								<!-- === DESCRIPTION === -->
 								<p
 									style="
 										font-size: 13px;
-										color: #6b7280;
-										margin: 22px 0 6px;
+										color: #64748b;
+										margin: 0 0 4px;
 										text-transform: uppercase;
-										letter-spacing: 0.5px;
+										letter-spacing: 0.6px;
+										font-weight: 600;
 									"
 								>
-									<b>Non-conformance Description</b>
+									Non-Conformance Description
 								</p>
 								<div
 									style="
 										border-left: 4px solid #b91c1c;
 										background: #fef2f2;
-										padding: 12px 16px;
-										font-size: 13.5px;
+										padding: 12px 18px;
+										font-size: 14px;
 										color: #111827;
-										line-height: 1.6;
+										line-height: 1.7;
 										border-radius: 0 6px 6px 0;
+										margin-bottom: 24px;
 									"
 								>
 									{{ doc.details or "No description provided." }}
 								</div>
 
+								<!-- === INSTRUCTION === -->
 								<p
 									style="
-										font-size: 13.5px;
-										color: #374151;
-										margin: 22px 0 0;
+										font-size: 14px;
+										color: #1e293b;
+										margin: 0 0 24px;
 										line-height: 1.6;
 									"
 								>
-									Kindly fill in the <b>Root Cause</b>,
-									<b>Corrective Action</b> and <b>Preventive Action</b>, then
-									click <b>Submit Response</b> from the <i>Actions</i> menu.
-									Your response will be reviewed by {{ issuer_display }}.
+									Kindly fill in the <b>Root Cause</b>, <b>Corrective Action</b>,
+									and <b>Preventive Action</b>, then click
+									<b>Submit Response</b> from the <i>Actions</i> menu. Your
+									response will be reviewed by <b>{{ issuer_display }}</b>.
 								</p>
 
-								<!-- Button -->
+								<!-- === BUTTON === -->
 								<table
 									width="100%"
 									cellpadding="0"
 									cellspacing="0"
-									style="margin-top: 26px"
+									style="margin-top: 4px"
 								>
 									<tr>
 										<td align="center">
-											
+											<a
 												href="{{ nc_url }}"
 												style="
 													background: #b91c1c;
 													color: #ffffff;
 													text-decoration: none;
-													padding: 12px 36px;
-													border-radius: 6px;
-													font-size: 14px;
-													font-weight: bold;
+													padding: 12px 40px;
+													border-radius: 8px;
+													font-size: 15px;
+													font-weight: 600;
 													display: inline-block;
+													box-shadow: 0 2px 6px rgba(185, 28, 28, 0.2);
+													transition: background 0.2s;
+													letter-spacing: 0.2px;
 												"
 											>
 												Open NCR &rarr;
@@ -333,33 +460,36 @@
 							</td>
 						</tr>
 
-						<!-- Footer -->
+						<!-- === FOOTER === -->
 						<tr>
 							<td
 								style="
-									background: #f9fafb;
+									background: #f8fafc;
 									padding: 16px 32px;
-									border-top: 1px solid #e5e7eb;
+									border-top: 1px solid #e9edf2;
 								"
 							>
 								<p
 									style="
-										font-size: 11.5px;
-										color: #9ca3af;
+										font-size: 12px;
+										color: #94a3b8;
 										margin: 0;
 										text-align: center;
-										line-height: 1.5;
+										line-height: 1.6;
 									"
 								>
 									This is an automated notification from PPECON Integrated
 									Management System.<br />
-									Please do not reply to this email.
+									Please do not reply to this email. For support, contact the IMS
+									team.
 								</p>
 							</td>
 						</tr>
 					</table>
+					<!-- End Email Container -->
 				</td>
 			</tr>
 		</table>
+		<!-- End Main Wrapper -->
 	</body>
 </html>
