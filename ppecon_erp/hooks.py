@@ -165,7 +165,11 @@ doc_events = {
     "before_update_after_submit": "ppecon_erp.notifications.nc_email.validate_nc_workflow",
     "on_update": "ppecon_erp.notifications.nc_email.send_nc_review_email",
     "on_update_after_submit": "ppecon_erp.notifications.nc_email.send_nc_review_email",
-  }
+  },
+
+    "Project": {
+        "on_update": "ppecon_erp.project.project_notifications.notify_design_representative"
+     }
 }
 
 
@@ -190,6 +194,9 @@ scheduler_events = {
     "cron": {
         "0 0 1 * *": [
             "ppecon_erp.leave_application.leave_balance.update_monthly_leave_allocations"
+        ],
+        "0 0 * * *": [
+            "ppecon_erp.opportunity.follow_up.send_opportunity_followup_reminders"
         ]
     }
 }
