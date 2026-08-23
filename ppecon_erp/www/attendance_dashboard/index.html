@@ -2,7 +2,7 @@
 
 <style>
 	.att-wrap {
-		max-width: 1440px;
+		max-width: 1560px;
 		margin: 0 auto;
 		padding: 26px 22px;
 		font-family: "Segoe UI", Arial, sans-serif;
@@ -31,7 +31,6 @@
 		color: #98a4b0;
 	}
 
-	/* ---- filter bar ---- */
 	.att-filters {
 		display: flex;
 		align-items: center;
@@ -115,10 +114,9 @@
 		color: #1b6bc4;
 	}
 
-	/* ---- tiles ---- */
 	.att-tiles {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 		gap: 12px;
 		margin-bottom: 20px;
 	}
@@ -138,7 +136,7 @@
 		opacity: 0.92;
 	}
 	.att-tile .val {
-		font-size: 28px;
+		font-size: 26px;
 		font-weight: 800;
 		margin-top: 3px;
 		line-height: 1;
@@ -170,7 +168,6 @@
 		background: linear-gradient(135deg, #c2185b, #7a0e3a);
 	}
 
-	/* ---- charts row ---- */
 	.att-charts {
 		display: grid;
 		grid-template-columns: 320px 1fr;
@@ -195,9 +192,6 @@
 		color: #1f272e;
 		margin-bottom: 10px;
 	}
-
-	/* FIX: fixed-height wrapper stops Chart.js from expanding the card
-	   endlessly when maintainAspectRatio would otherwise scale with width */
 	.chart-box {
 		position: relative;
 		height: 260px;
@@ -207,7 +201,6 @@
 		padding: 90px 0;
 	}
 
-	/* ---- table ---- */
 	.att-table-toolbar {
 		display: flex;
 		align-items: center;
@@ -222,6 +215,10 @@
 		padding: 0 10px;
 		font-size: 12.5px;
 		min-width: 220px;
+	}
+	.att-table-toolbar .hint {
+		font-size: 11px;
+		color: #98a4b0;
 	}
 	.att-count {
 		font-size: 11.5px;
@@ -239,7 +236,7 @@
 	table.att-table {
 		width: 100%;
 		border-collapse: collapse;
-		min-width: 1050px;
+		min-width: 1400px;
 		font-size: 12.5px;
 	}
 	.att-table th {
@@ -278,6 +275,9 @@
 	.att-table tr.row-absent:hover td {
 		background: #f9ece9;
 	}
+	.att-table tr.group-start td {
+		border-top: 2px solid #dde6f0;
+	}
 	.att-badge {
 		display: inline-block;
 		padding: 2px 10px;
@@ -308,6 +308,14 @@
 	.dot-grey {
 		color: #cfd6dc;
 	}
+	.site-txt {
+		color: #6c7680;
+		font-size: 12px;
+	}
+	.actual-hrs {
+		font-weight: 700;
+		color: #14498f;
+	}
 	.att-empty,
 	.att-loading {
 		padding: 50px;
@@ -324,7 +332,7 @@
 	<div class="att-head">
 		<div>
 			<h1>Attendance Dashboard</h1>
-			<p>Live data from Attendance records</p>
+			<p>Live data from Attendance records — grouped by employee, latest date first</p>
 		</div>
 		<div class="att-refresh-note" id="rangeNote"></div>
 	</div>
@@ -364,7 +372,12 @@
 
 	<!-- ================= TABLE ================= -->
 	<div class="att-table-toolbar">
-		<input type="text" id="tblSearch" placeholder="Filter table (name, status, shift)..." />
+		<input
+			type="text"
+			id="tblSearch"
+			placeholder="Filter table (name, status, shift, site)..."
+		/>
+		<span class="hint">Grouped by employee · click any column to sort instead</span>
 		<button class="att-btn ghost" id="btnExport">↓ Export CSV</button>
 		<span class="att-count" id="rowCount"></span>
 	</div>
@@ -379,9 +392,12 @@
 					<th data-key="day">Day</th>
 					<th data-key="status">Status</th>
 					<th data-key="shift">Shift</th>
-					<th data-key="in_time">In</th>
-					<th data-key="out_time">Out</th>
-					<th data-key="working_hours">Hours</th>
+					<th data-key="check_in_time">Time of Attendance</th>
+					<th data-key="check_in_from">Check-In From</th>
+					<th data-key="check_out_time">Time of Leave</th>
+					<th data-key="check_out_from">Check-Out From</th>
+					<th data-key="working_hours">Sys Hours</th>
+					<th data-key="actual_hours">Actual Hours</th>
 					<th data-key="late_entry">Late</th>
 					<th data-key="early_exit">Early</th>
 					<th data-key="overtime_hours">OT</th>
@@ -389,7 +405,7 @@
 			</thead>
 			<tbody id="tblBody">
 				<tr>
-					<td colspan="12" class="att-empty">Select a range and click Apply</td>
+					<td colspan="15" class="att-empty">Select a range and click Apply</td>
 				</tr>
 			</tbody>
 		</table>
@@ -399,11 +415,12 @@
 <script>
 	(function () {
 		const METHOD_PREFIX = "ppecon_erp.www.attendance_dashboard.index";
+		const COLSPAN = 15;
 		let allRows = [];
 		let statusChart = null,
 			deptChart = null;
-		let sortKey = "date",
-			sortDir = "desc";
+		let sortKey = null,
+			sortDir = "asc"; // null = keep backend order (grouped, latest date first)
 
 		function callMethod(method, args) {
 			return new Promise((resolve, reject) => {
@@ -466,7 +483,8 @@
 				["On Leave", s.on_leave || 0, "tb", ""],
 				["Half Day", s.half_day || 0, "ta", ""],
 				["Late Entry", s.late_entry || 0, "tp", ""],
-				["Total Hours", s.total_hours || 0, "ts", (s.total_records || 0) + " records"],
+				["Sys Hours", s.total_hours || 0, "ts", (s.total_records || 0) + " records"],
+				["Actual Hours", s.total_actual_hours || 0, "tb", "from check-in/out"],
 				[
 					"Overtime Hours",
 					s.total_overtime_hours || 0,
@@ -583,6 +601,7 @@
 		}
 
 		function sortRows(rows) {
+			if (!sortKey) return rows; // keep backend order: employee ASC, date DESC (latest first)
 			const dir = sortDir === "asc" ? 1 : -1;
 			return rows.slice().sort((a, b) => {
 				let va = a[sortKey],
@@ -604,7 +623,15 @@
 			let rows = allRows;
 			if (q) {
 				rows = rows.filter((r) =>
-					[r.employee_name, r.status, r.shift, r.department, r.job_number]
+					[
+						r.employee_name,
+						r.status,
+						r.shift,
+						r.department,
+						r.job_number,
+						r.check_in_from,
+						r.check_out_from,
+					]
 						.filter(Boolean)
 						.join(" ")
 						.toLowerCase()
@@ -627,13 +654,17 @@
 
 			const body = document.getElementById("tblBody");
 			if (!rows.length) {
-				body.innerHTML = `<tr><td colspan="12" class="att-empty">No attendance records found.</td></tr>`;
+				body.innerHTML = `<tr><td colspan="${COLSPAN}" class="att-empty">No attendance records found.</td></tr>`;
 				return;
 			}
+
+			let prevEmployee = null;
 			body.innerHTML = rows
 				.map((r) => {
 					const isAbsent = (r.status || "").toLowerCase().includes("absent");
-					// OT column: only show hours when overtime is enabled for this specific record
+					const isNewGroup = !sortKey && r.employee !== prevEmployee;
+					prevEmployee = r.employee;
+
 					const otCell = r.overtime_enabled
 						? r.overtime_hours > 0
 							? `<span style="color:#b97b0f;font-weight:700;">${r.overtime_hours}h</span>`
@@ -641,16 +672,19 @@
 						: `<span class="dot-grey">-</span>`;
 
 					return `
-			<tr class="${isAbsent ? "row-absent" : ""}">
+			<tr class="${isAbsent ? "row-absent" : ""} ${isNewGroup ? "group-start" : ""}">
 				<td>${r.job_number}</td>
 				<td>${r.employee_name}</td>
 				<td>${r.date}</td>
 				<td>${r.day}</td>
 				<td>${badge(r.status)}</td>
 				<td>${r.shift || "-"}</td>
-				<td>${r.in_time}</td>
-				<td>${r.out_time}</td>
+				<td>${r.check_in_time}</td>
+				<td class="site-txt">${r.check_in_from}</td>
+				<td>${r.check_out_time}</td>
+				<td class="site-txt">${r.check_out_from}</td>
 				<td>${r.working_hours}</td>
+				<td class="actual-hrs">${r.actual_hours}</td>
 				<td>${r.late_entry ? '<span class="dot-red">●</span>' : '<span class="dot-grey">-</span>'}</td>
 				<td>${r.early_exit ? '<span class="dot-red">●</span>' : '<span class="dot-grey">-</span>'}</td>
 				<td>${otCell}</td>
@@ -668,9 +702,12 @@
 				"Day",
 				"Status",
 				"Shift",
-				"In",
-				"Out",
-				"Hours",
+				"Time of Attendance",
+				"Check-In From",
+				"Time of Leave",
+				"Check-Out From",
+				"Sys Hours",
+				"Actual Hours",
 				"Late",
 				"Early",
 				"OT Hours",
@@ -686,9 +723,12 @@
 						r.day,
 						r.status,
 						r.shift,
-						r.in_time,
-						r.out_time,
+						r.check_in_time,
+						r.check_in_from,
+						r.check_out_time,
+						r.check_out_from,
 						r.working_hours,
+						r.actual_hours,
 						r.late_entry ? "Yes" : "No",
 						r.early_exit ? "Yes" : "No",
 						r.overtime_enabled ? r.overtime_hours : "-",
@@ -717,13 +757,12 @@
 				return;
 			}
 
-			// never send null — only include when actually set
 			const args = { from_date, to_date };
 			if (department) args.department = department;
 			if (employee) args.employee = employee;
 
 			document.getElementById("tblBody").innerHTML =
-				`<tr><td colspan="12" class="att-loading">Loading attendance data...</td></tr>`;
+				`<tr><td colspan="${COLSPAN}" class="att-loading">Loading attendance data...</td></tr>`;
 			document.getElementById("rangeNote").textContent = `${from_date} → ${to_date}`;
 
 			callMethod(METHOD_PREFIX + ".get_attendance_data", args)
@@ -731,10 +770,11 @@
 					if (!d) return;
 					if (d.error) {
 						document.getElementById("tblBody").innerHTML =
-							`<tr><td colspan="12" class="att-empty">Error: ${d.error}</td></tr>`;
+							`<tr><td colspan="${COLSPAN}" class="att-empty">Error: ${d.error}</td></tr>`;
 						return;
 					}
 					allRows = d.rows || [];
+					sortKey = null; // reset to grouped backend order on every fresh load
 					renderTiles(d.summary || {});
 					renderStatusChart(d.summary || {});
 					renderDeptChart(allRows);
@@ -743,7 +783,7 @@
 				.catch((e) => {
 					console.error("Attendance dashboard error:", e);
 					document.getElementById("tblBody").innerHTML =
-						`<tr><td colspan="12" class="att-empty">Failed to load data. Check console.</td></tr>`;
+						`<tr><td colspan="${COLSPAN}" class="att-empty">Failed to load data. Check console.</td></tr>`;
 				});
 		}
 
@@ -797,7 +837,6 @@
 			document.getElementById("btnExport").addEventListener("click", exportCsv);
 			document.getElementById("tblSearch").addEventListener("input", renderTable);
 
-			// default to a range that actually has data, fallback to this month
 			callMethod(METHOD_PREFIX + ".get_latest_range").then((r) => {
 				if (r && r.from_date) {
 					document.getElementById("fltFrom").value = r.from_date;
