@@ -1,32 +1,75 @@
-<link rel="stylesheet" href="/assets/ppecon_ims/css/ims_portal.css" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 
 <style>
 	.att-wrap {
-		max-width: 1400px;
+		max-width: 1440px;
 		margin: 0 auto;
-		padding: 24px 20px;
+		padding: 26px 22px;
 		font-family: "Segoe UI", Arial, sans-serif;
+		color: #1f272e;
 	}
+	.att-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: 6px;
+		margin-bottom: 18px;
+	}
+	.att-head h1 {
+		font-size: 22px;
+		color: #0d2137;
+		margin: 0;
+	}
+	.att-head p {
+		color: #8d99a6;
+		font-size: 13px;
+		margin: 2px 0 0;
+	}
+	.att-refresh-note {
+		font-size: 11.5px;
+		color: #98a4b0;
+	}
+
+	/* ---- filter bar ---- */
 	.att-filters {
 		display: flex;
-		gap: 10px;
+		align-items: center;
+		gap: 8px;
 		flex-wrap: wrap;
-		align-items: end;
 		background: #fff;
 		border: 1px solid #e2e6ea;
 		border-radius: 10px;
-		padding: 14px 16px;
-		margin-bottom: 18px;
+		padding: 12px 14px;
+		margin-bottom: 20px;
+		box-shadow: 0 1px 3px rgba(16, 42, 77, 0.06);
 	}
-	.att-filters label {
-		font-size: 11px;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.3px;
-		color: #8d99a6;
-		display: block;
-		margin-bottom: 4px;
+	.pb-chip {
+		border: 1px solid #dde6f0;
+		background: #fff;
+		color: #44536b;
+		border-radius: 20px;
+		padding: 6px 15px;
+		font-size: 12.5px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.12s ease;
+		white-space: nowrap;
+	}
+	.pb-chip:hover {
+		border-color: #1b6bc4;
+		color: #1b6bc4;
+	}
+	.pb-chip.active {
+		background: #1b6bc4;
+		border-color: #1b6bc4;
+		color: #fff;
+	}
+	.att-filters .sep {
+		width: 1px;
+		height: 24px;
+		background: #e2e6ea;
+		margin: 0 2px;
 	}
 	.att-filters input,
 	.att-filters select {
@@ -35,7 +78,16 @@
 		border-radius: 6px;
 		padding: 0 10px;
 		font-size: 13px;
-		min-width: 150px;
+		background: #fff;
+	}
+	.att-filters input[type="date"] {
+		min-width: 138px;
+	}
+	.att-filters input[type="text"] {
+		min-width: 170px;
+	}
+	.att-filters select {
+		min-width: 160px;
 	}
 	.att-btn {
 		height: 34px;
@@ -47,32 +99,54 @@
 		font-weight: 600;
 		font-size: 13px;
 		cursor: pointer;
+		margin-left: auto;
 	}
 	.att-btn:hover {
 		background: #14498f;
 	}
+	.att-btn.ghost {
+		background: #fff;
+		color: #44536b;
+		border: 1px solid #d8dde2;
+		margin-left: 0;
+	}
+	.att-btn.ghost:hover {
+		border-color: #1b6bc4;
+		color: #1b6bc4;
+	}
 
+	/* ---- tiles ---- */
 	.att-tiles {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-		gap: 10px;
-		margin-bottom: 18px;
+		grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+		gap: 12px;
+		margin-bottom: 20px;
 	}
 	.att-tile {
-		border-radius: 8px;
-		padding: 12px 15px;
+		border-radius: 10px;
+		padding: 14px 16px;
 		color: #fff;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 1px 3px rgba(16, 42, 77, 0.1);
 	}
 	.att-tile .lbl {
 		font-size: 10.5px;
-		font-weight: 600;
+		font-weight: 700;
 		text-transform: uppercase;
-		opacity: 0.9;
+		letter-spacing: 0.4px;
+		opacity: 0.92;
 	}
 	.att-tile .val {
-		font-size: 26px;
+		font-size: 28px;
 		font-weight: 800;
-		margin-top: 2px;
+		margin-top: 3px;
+		line-height: 1;
+	}
+	.att-tile .sub {
+		font-size: 11px;
+		opacity: 0.85;
+		margin-top: 4px;
 	}
 	.tg {
 		background: linear-gradient(135deg, #2e9e5b, #1d6b3c);
@@ -92,32 +166,80 @@
 	.ts {
 		background: linear-gradient(135deg, #546e7a, #37474f);
 	}
+	.to {
+		background: linear-gradient(135deg, #c2185b, #7a0e3a);
+	}
 
-	.att-chart-card {
+	/* ---- charts row ---- */
+	.att-charts {
+		display: grid;
+		grid-template-columns: 320px 1fr;
+		gap: 16px;
+		margin-bottom: 20px;
+	}
+	@media (max-width: 800px) {
+		.att-charts {
+			grid-template-columns: 1fr;
+		}
+	}
+	.att-card {
 		background: #fff;
 		border: 1px solid #e2e6ea;
 		border-radius: 10px;
 		padding: 16px;
-		margin-bottom: 18px;
-		max-width: 340px;
+		box-shadow: 0 1px 3px rgba(16, 42, 77, 0.06);
 	}
-	.att-chart-title {
+	.att-card-title {
 		font-size: 12.5px;
 		font-weight: 700;
 		color: #1f272e;
-		margin-bottom: 8px;
+		margin-bottom: 10px;
 	}
 
+	/* FIX: fixed-height wrapper stops Chart.js from expanding the card
+	   endlessly when maintainAspectRatio would otherwise scale with width */
+	.chart-box {
+		position: relative;
+		height: 260px;
+		width: 100%;
+	}
+	.chart-box .att-empty {
+		padding: 90px 0;
+	}
+
+	/* ---- table ---- */
+	.att-table-toolbar {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-bottom: 10px;
+		flex-wrap: wrap;
+	}
+	.att-table-toolbar input {
+		height: 32px;
+		border: 1px solid #d8dde2;
+		border-radius: 6px;
+		padding: 0 10px;
+		font-size: 12.5px;
+		min-width: 220px;
+	}
+	.att-count {
+		font-size: 11.5px;
+		color: #98a4b0;
+		margin-left: auto;
+	}
 	.att-table-wrap {
 		background: #fff;
 		border: 1px solid #e2e6ea;
 		border-radius: 10px;
 		overflow: auto;
+		box-shadow: 0 1px 3px rgba(16, 42, 77, 0.06);
+		max-height: 640px;
 	}
 	table.att-table {
 		width: 100%;
 		border-collapse: collapse;
-		min-width: 1000px;
+		min-width: 1050px;
 		font-size: 12.5px;
 	}
 	.att-table th {
@@ -126,11 +248,21 @@
 		padding: 9px 10px;
 		font-size: 10.5px;
 		text-transform: uppercase;
+		letter-spacing: 0.3px;
 		color: #8d99a6;
 		border-bottom: 1px solid #e2e6ea;
 		position: sticky;
 		top: 0;
 		white-space: nowrap;
+		cursor: pointer;
+		user-select: none;
+		z-index: 2;
+	}
+	.att-table th:hover {
+		color: #1b6bc4;
+	}
+	.att-table th.sorted {
+		color: #1b6bc4;
 	}
 	.att-table td {
 		padding: 8px 10px;
@@ -140,9 +272,15 @@
 	.att-table tr:hover td {
 		background: #f8f9fa;
 	}
+	.att-table tr.row-absent td {
+		background: #fdf6f5;
+	}
+	.att-table tr.row-absent:hover td {
+		background: #f9ece9;
+	}
 	.att-badge {
 		display: inline-block;
-		padding: 2px 9px;
+		padding: 2px 10px;
 		border-radius: 20px;
 		font-size: 10.5px;
 		font-weight: 600;
@@ -167,63 +305,91 @@
 		color: #c2402a;
 		font-weight: 700;
 	}
-	.att-empty {
-		padding: 40px;
+	.dot-grey {
+		color: #cfd6dc;
+	}
+	.att-empty,
+	.att-loading {
+		padding: 50px;
 		text-align: center;
 		color: #98a4b0;
+		font-size: 13px;
+	}
+	.att-loading::before {
+		content: "⏳ ";
 	}
 </style>
 
 <div class="att-wrap">
-	<h1 style="font-size: 22px; color: #0d2137; margin-bottom: 4px">Attendance Dashboard</h1>
-	<p style="color: #6c7680; font-size: 13px; margin-bottom: 18px">
-		Live data from Attendance records
-	</p>
+	<div class="att-head">
+		<div>
+			<h1>Attendance Dashboard</h1>
+			<p>Live data from Attendance records</p>
+		</div>
+		<div class="att-refresh-note" id="rangeNote"></div>
+	</div>
 
-	<div class="att-filters">
-		<div><label>From Date</label><input type="date" id="fltFrom" /></div>
-		<div><label>To Date</label><input type="date" id="fltTo" /></div>
-		<div>
-			<label>Department</label
-			><select id="fltDept">
-				<option value="">All Departments</option>
-			</select>
-		</div>
-		<div>
-			<label>Employee</label
-			><input type="text" id="fltEmp" placeholder="Search employee..." />
-		</div>
+	<!-- ================= FILTERS ================= -->
+	<div class="att-filters" id="periodBar">
+		<button class="pb-chip" data-period="today">Today</button>
+		<button class="pb-chip" data-period="this_week">This Week</button>
+		<button class="pb-chip active" data-period="this_month">This Month</button>
+		<button class="pb-chip" data-period="last_month">Last Month</button>
+		<div class="sep"></div>
+		<input type="date" id="fltFrom" />
+		<span style="font-size: 12px; color: #8a97a8">to</span>
+		<input type="date" id="fltTo" />
+		<div class="sep"></div>
+		<select id="fltDept">
+			<option value="">All Departments</option>
+		</select>
+		<input type="text" id="fltEmp" placeholder="Search employee..." />
 		<button class="att-btn" id="btnLoad">Apply</button>
 	</div>
 
+	<!-- ================= TILES ================= -->
 	<div class="att-tiles" id="tiles"></div>
 
-	<div class="att-chart-card">
-		<div class="att-chart-title">Status Breakdown</div>
-		<canvas id="statusChart" height="180"></canvas>
+	<!-- ================= CHARTS ================= -->
+	<div class="att-charts">
+		<div class="att-card">
+			<div class="att-card-title">Status Breakdown</div>
+			<div class="chart-box"><canvas id="statusChart"></canvas></div>
+		</div>
+		<div class="att-card">
+			<div class="att-card-title">Present vs Absent — by Department</div>
+			<div class="chart-box"><canvas id="deptChart"></canvas></div>
+		</div>
+	</div>
+
+	<!-- ================= TABLE ================= -->
+	<div class="att-table-toolbar">
+		<input type="text" id="tblSearch" placeholder="Filter table (name, status, shift)..." />
+		<button class="att-btn ghost" id="btnExport">↓ Export CSV</button>
+		<span class="att-count" id="rowCount"></span>
 	</div>
 
 	<div class="att-table-wrap">
 		<table class="att-table">
 			<thead>
 				<tr>
-					<th>Job No.</th>
-					<th>Name</th>
-					<th>Date</th>
-					<th>Day</th>
-					<th>Status</th>
-					<th>Shift</th>
-					<th>In</th>
-					<th>Out</th>
-					<th>Hours</th>
-					<th>Late</th>
-					<th>Early</th>
-					<th>OT</th>
+					<th data-key="job_number">Job No.</th>
+					<th data-key="employee_name">Name</th>
+					<th data-key="date">Date</th>
+					<th data-key="day">Day</th>
+					<th data-key="status">Status</th>
+					<th data-key="shift">Shift</th>
+					<th data-key="in_time">In</th>
+					<th data-key="out_time">Out</th>
+					<th data-key="working_hours">Hours</th>
+					<th data-key="late_entry">Late</th>
+					<th data-key="early_exit">Early</th>
+					<th data-key="overtime_hours">OT</th>
 				</tr>
 			</thead>
 			<tbody id="tblBody">
 				<tr>
-					<td colspan="12" class="att-empty">Select a date range and click Apply</td>
+					<td colspan="12" class="att-empty">Select a range and click Apply</td>
 				</tr>
 			</tbody>
 		</table>
@@ -232,18 +398,27 @@
 
 <script>
 	(function () {
+		const METHOD_PREFIX = "ppecon_erp.www.attendance_dashboard.index";
+		let allRows = [];
+		let statusChart = null,
+			deptChart = null;
+		let sortKey = "date",
+			sortDir = "desc";
+
 		function callMethod(method, args) {
 			return new Promise((resolve, reject) => {
 				if (window.frappe && frappe.call) {
 					frappe.call({
 						method,
-						args,
+						args: args || {},
 						callback: (r) => resolve(r.message),
 						error: reject,
 					});
 				} else {
 					const qs = new URLSearchParams(args || {}).toString();
-					fetch("/api/method/" + method + "?" + qs, { credentials: "same-origin" })
+					fetch("/api/method/" + method + (qs ? "?" + qs : ""), {
+						credentials: "same-origin",
+					})
 						.then((r) => r.json())
 						.then((j) => resolve(j.message))
 						.catch(reject);
@@ -251,16 +426,29 @@
 			});
 		}
 
-		function today() {
-			return new Date().toISOString().split("T")[0];
-		}
-		function firstOfMonth() {
-			const d = new Date();
-			d.setDate(1);
-			return d.toISOString().split("T")[0];
+		function fmtDate(d) {
+			const p = (n) => String(n).padStart(2, "0");
+			return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 		}
 
-		let statusChart = null;
+		function resolvePeriod(period) {
+			const now = new Date();
+			let start,
+				end = now;
+			if (period === "today") {
+				start = now;
+			} else if (period === "this_week") {
+				start = new Date(now);
+				start.setDate(now.getDate() - now.getDay());
+			} else if (period === "last_month") {
+				start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+				end = new Date(now.getFullYear(), now.getMonth(), 0);
+			} else {
+				// this_month
+				start = new Date(now.getFullYear(), now.getMonth(), 1);
+			}
+			return [fmtDate(start), fmtDate(end)];
+		}
 
 		function badge(status) {
 			const s = (status || "").toLowerCase();
@@ -273,54 +461,187 @@
 
 		function renderTiles(s) {
 			const tiles = [
-				["Present", s.present || 0, "tg"],
-				["Absent", s.absent || 0, "tr"],
-				["On Leave", s.on_leave || 0, "tb"],
-				["Half Day", s.half_day || 0, "ta"],
-				["Late Entry", s.late_entry || 0, "tp"],
-				["Total Hours", s.total_hours || 0, "ts"],
+				["Present", s.present || 0, "tg", (s.attendance_pct || 0) + "% of marked days"],
+				["Absent", s.absent || 0, "tr", ""],
+				["On Leave", s.on_leave || 0, "tb", ""],
+				["Half Day", s.half_day || 0, "ta", ""],
+				["Late Entry", s.late_entry || 0, "tp", ""],
+				["Total Hours", s.total_hours || 0, "ts", (s.total_records || 0) + " records"],
+				[
+					"Overtime Hours",
+					s.total_overtime_hours || 0,
+					"to",
+					(s.overtime_days || 0) + " OT day(s)",
+				],
 			];
 			document.getElementById("tiles").innerHTML = tiles
 				.map(
-					([l, v, c]) =>
-						`<div class="att-tile ${c}"><div class="lbl">${l}</div><div class="val">${v}</div></div>`,
+					([l, v, c, sub]) =>
+						`<div class="att-tile ${c}"><div class="lbl">${l}</div><div class="val">${v}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div>`,
 				)
 				.join("");
 		}
 
-		function renderChart(s) {
+		function showChartEmpty(ctx, msg) {
+			ctx.style.display = "none";
+			const box = ctx.parentElement;
+			box.querySelector(".att-empty")?.remove();
+			const empty = document.createElement("div");
+			empty.className = "att-empty";
+			empty.textContent = msg || "No data for this range";
+			box.appendChild(empty);
+		}
+
+		function clearChartEmpty(ctx) {
+			ctx.style.display = "";
+			ctx.parentElement.querySelector(".att-empty")?.remove();
+		}
+
+		function renderStatusChart(s) {
 			const ctx = document.getElementById("statusChart");
 			if (statusChart) statusChart.destroy();
+			const vals = [s.present || 0, s.absent || 0, s.on_leave || 0, s.half_day || 0];
+			if (!vals.some((v) => v > 0)) {
+				showChartEmpty(ctx);
+				return;
+			}
+			clearChartEmpty(ctx);
 			statusChart = new Chart(ctx, {
 				type: "doughnut",
 				data: {
 					labels: ["Present", "Absent", "On Leave", "Half Day"],
 					datasets: [
 						{
-							data: [
-								s.present || 0,
-								s.absent || 0,
-								s.on_leave || 0,
-								s.half_day || 0,
-							],
+							data: vals,
 							backgroundColor: ["#178a5c", "#c2402a", "#1b6bc4", "#b97b0f"],
+							borderWidth: 2,
+							borderColor: "#fff",
 						},
 					],
 				},
-				options: { plugins: { legend: { position: "bottom" } } },
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: {
+							position: "bottom",
+							labels: { boxWidth: 10, font: { size: 11.5 } },
+						},
+					},
+				},
 			});
 		}
 
-		function renderTable(rows) {
+		function renderDeptChart(rows) {
+			const ctx = document.getElementById("deptChart");
+			if (deptChart) deptChart.destroy();
+			const byDept = {};
+			rows.forEach((r) => {
+				const dep = r.department || "Not Set";
+				byDept[dep] = byDept[dep] || { present: 0, absent: 0 };
+				const s = (r.status || "").toLowerCase();
+				if (s.includes("present")) byDept[dep].present++;
+				else if (s.includes("absent")) byDept[dep].absent++;
+			});
+			const labels = Object.keys(byDept);
+			if (!labels.length) {
+				showChartEmpty(ctx);
+				return;
+			}
+			clearChartEmpty(ctx);
+			deptChart = new Chart(ctx, {
+				type: "bar",
+				data: {
+					labels,
+					datasets: [
+						{
+							label: "Present",
+							data: labels.map((l) => byDept[l].present),
+							backgroundColor: "#178a5c",
+							borderRadius: 4,
+						},
+						{
+							label: "Absent",
+							data: labels.map((l) => byDept[l].absent),
+							backgroundColor: "#c2402a",
+							borderRadius: 4,
+						},
+					],
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: {
+							position: "top",
+							labels: { boxWidth: 10, font: { size: 11.5 } },
+						},
+					},
+					scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+				},
+			});
+		}
+
+		function sortRows(rows) {
+			const dir = sortDir === "asc" ? 1 : -1;
+			return rows.slice().sort((a, b) => {
+				let va = a[sortKey],
+					vb = b[sortKey];
+				if (typeof va === "boolean") {
+					va = va ? 1 : 0;
+					vb = vb ? 1 : 0;
+				}
+				if (va === undefined || va === null) va = "";
+				if (vb === undefined || vb === null) vb = "";
+				if (va < vb) return -1 * dir;
+				if (va > vb) return 1 * dir;
+				return 0;
+			});
+		}
+
+		function filteredRows() {
+			const q = (document.getElementById("tblSearch").value || "").toLowerCase();
+			let rows = allRows;
+			if (q) {
+				rows = rows.filter((r) =>
+					[r.employee_name, r.status, r.shift, r.department, r.job_number]
+						.filter(Boolean)
+						.join(" ")
+						.toLowerCase()
+						.includes(q),
+				);
+			}
+			return sortRows(rows);
+		}
+
+		function renderTable() {
+			const rows = filteredRows();
+			document.getElementById("rowCount").textContent =
+				`${rows.length} of ${allRows.length} records`;
+
+			document.querySelectorAll(".att-table th").forEach((th) => {
+				th.classList.toggle("sorted", th.dataset.key === sortKey);
+				th.textContent = th.textContent.replace(/ [↑↓]$/, "");
+				if (th.dataset.key === sortKey) th.textContent += sortDir === "asc" ? " ↑" : " ↓";
+			});
+
 			const body = document.getElementById("tblBody");
 			if (!rows.length) {
-				body.innerHTML = `<tr><td colspan="12" class="att-empty">No attendance records found for this range.</td></tr>`;
+				body.innerHTML = `<tr><td colspan="12" class="att-empty">No attendance records found.</td></tr>`;
 				return;
 			}
 			body.innerHTML = rows
-				.map(
-					(r) => `
-			<tr>
+				.map((r) => {
+					const isAbsent = (r.status || "").toLowerCase().includes("absent");
+					// OT column: only show hours when overtime is enabled for this specific record
+					const otCell = r.overtime_enabled
+						? r.overtime_hours > 0
+							? `<span style="color:#b97b0f;font-weight:700;">${r.overtime_hours}h</span>`
+							: `<span class="dot-grey">0h</span>`
+						: `<span class="dot-grey">-</span>`;
+
+					return `
+			<tr class="${isAbsent ? "row-absent" : ""}">
 				<td>${r.job_number}</td>
 				<td>${r.employee_name}</td>
 				<td>${r.date}</td>
@@ -330,63 +651,167 @@
 				<td>${r.in_time}</td>
 				<td>${r.out_time}</td>
 				<td>${r.working_hours}</td>
-				<td>${r.late_entry ? '<span class="dot-red">●</span>' : "-"}</td>
-				<td>${r.early_exit ? '<span class="dot-red">●</span>' : "-"}</td>
-				<td>${r.overtime ? "Yes" : "-"}</td>
-			</tr>`,
-				)
+				<td>${r.late_entry ? '<span class="dot-red">●</span>' : '<span class="dot-grey">-</span>'}</td>
+				<td>${r.early_exit ? '<span class="dot-red">●</span>' : '<span class="dot-grey">-</span>'}</td>
+				<td>${otCell}</td>
+			</tr>`;
+				})
 				.join("");
 		}
 
+		function exportCsv() {
+			const rows = filteredRows();
+			const head = [
+				"Job No",
+				"Name",
+				"Date",
+				"Day",
+				"Status",
+				"Shift",
+				"In",
+				"Out",
+				"Hours",
+				"Late",
+				"Early",
+				"OT Hours",
+			];
+			const esc = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+			const lines = [head.map(esc).join(",")];
+			rows.forEach((r) => {
+				lines.push(
+					[
+						r.job_number,
+						r.employee_name,
+						r.date,
+						r.day,
+						r.status,
+						r.shift,
+						r.in_time,
+						r.out_time,
+						r.working_hours,
+						r.late_entry ? "Yes" : "No",
+						r.early_exit ? "Yes" : "No",
+						r.overtime_enabled ? r.overtime_hours : "-",
+					]
+						.map(esc)
+						.join(","),
+				);
+			});
+			const blob = new Blob(["\ufeff" + lines.join("\n")], {
+				type: "text/csv;charset=utf-8;",
+			});
+			const a = document.createElement("a");
+			a.href = URL.createObjectURL(blob);
+			a.download = `attendance_${document.getElementById("fltFrom").value}_${document.getElementById("fltTo").value}.csv`;
+			a.click();
+		}
+
 		function loadData() {
-			const args = {
-				from_date: document.getElementById("fltFrom").value,
-				to_date: document.getElementById("fltTo").value,
-				department: document.getElementById("fltDept").value || null,
-				employee: document.getElementById("fltEmp").value || null,
-			};
-			if (!args.from_date || !args.to_date) {
+			const from_date = document.getElementById("fltFrom").value;
+			const to_date = document.getElementById("fltTo").value;
+			const department = document.getElementById("fltDept").value;
+			const employee = document.getElementById("fltEmp").value;
+
+			if (!from_date || !to_date) {
 				alert("Please select From and To dates");
 				return;
 			}
 
-			document.getElementById("tblBody").innerHTML =
-				`<tr><td colspan="12" class="att-empty">Loading...</td></tr>`;
+			// never send null — only include when actually set
+			const args = { from_date, to_date };
+			if (department) args.department = department;
+			if (employee) args.employee = employee;
 
-			callMethod("ppecon_erp.www.attendance_dashboard.index.get_attendance_data", args)
+			document.getElementById("tblBody").innerHTML =
+				`<tr><td colspan="12" class="att-loading">Loading attendance data...</td></tr>`;
+			document.getElementById("rangeNote").textContent = `${from_date} → ${to_date}`;
+
+			callMethod(METHOD_PREFIX + ".get_attendance_data", args)
 				.then((d) => {
 					if (!d) return;
-					renderTiles(d.summary);
-					renderChart(d.summary);
-					renderTable(d.rows);
+					if (d.error) {
+						document.getElementById("tblBody").innerHTML =
+							`<tr><td colspan="12" class="att-empty">Error: ${d.error}</td></tr>`;
+						return;
+					}
+					allRows = d.rows || [];
+					renderTiles(d.summary || {});
+					renderStatusChart(d.summary || {});
+					renderDeptChart(allRows);
+					renderTable();
 				})
 				.catch((e) => {
 					console.error("Attendance dashboard error:", e);
 					document.getElementById("tblBody").innerHTML =
-						`<tr><td colspan="12" class="att-empty">Failed to load data.</td></tr>`;
+						`<tr><td colspan="12" class="att-empty">Failed to load data. Check console.</td></tr>`;
 				});
 		}
 
 		function loadDepartments() {
-			callMethod("ppecon_erp.www.attendance_dashboard.index.get_departments").then(
-				(depts) => {
-					const sel = document.getElementById("fltDept");
-					(depts || []).forEach((d) => {
-						const opt = document.createElement("option");
-						opt.value = d;
-						opt.textContent = d;
-						sel.appendChild(opt);
-					});
-				},
-			);
+			callMethod(METHOD_PREFIX + ".get_departments").then((depts) => {
+				const sel = document.getElementById("fltDept");
+				(depts || []).forEach((d) => {
+					const opt = document.createElement("option");
+					opt.value = d;
+					opt.textContent = d;
+					sel.appendChild(opt);
+				});
+			});
+		}
+
+		function setupPeriodBar() {
+			document.querySelectorAll(".pb-chip").forEach((chip) => {
+				chip.addEventListener("click", () => {
+					document
+						.querySelectorAll(".pb-chip")
+						.forEach((c) => c.classList.remove("active"));
+					chip.classList.add("active");
+					const [f, t] = resolvePeriod(chip.dataset.period);
+					document.getElementById("fltFrom").value = f;
+					document.getElementById("fltTo").value = t;
+					loadData();
+				});
+			});
+		}
+
+		function setupTableSort() {
+			document.querySelectorAll(".att-table th").forEach((th) => {
+				th.addEventListener("click", () => {
+					const key = th.dataset.key;
+					if (sortKey === key) sortDir = sortDir === "asc" ? "desc" : "asc";
+					else {
+						sortKey = key;
+						sortDir = "asc";
+					}
+					renderTable();
+				});
+			});
 		}
 
 		function start() {
-			document.getElementById("fltFrom").value = firstOfMonth();
-			document.getElementById("fltTo").value = today();
-			document.getElementById("btnLoad").addEventListener("click", loadData);
 			loadDepartments();
-			loadData();
+			setupPeriodBar();
+			setupTableSort();
+
+			document.getElementById("btnLoad").addEventListener("click", loadData);
+			document.getElementById("btnExport").addEventListener("click", exportCsv);
+			document.getElementById("tblSearch").addEventListener("input", renderTable);
+
+			// default to a range that actually has data, fallback to this month
+			callMethod(METHOD_PREFIX + ".get_latest_range").then((r) => {
+				if (r && r.from_date) {
+					document.getElementById("fltFrom").value = r.from_date;
+					document.getElementById("fltTo").value = r.to_date;
+					document
+						.querySelectorAll(".pb-chip")
+						.forEach((c) => c.classList.remove("active"));
+				} else {
+					const [f, t] = resolvePeriod("this_month");
+					document.getElementById("fltFrom").value = f;
+					document.getElementById("fltTo").value = t;
+				}
+				loadData();
+			});
 		}
 
 		if (window.frappe && frappe.ready) frappe.ready(start);
