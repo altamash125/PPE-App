@@ -1,0 +1,407 @@
+<link rel="stylesheet" href="/assets/ppecon_ims/css/ims_portal.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<style>
+	.att-wrap {
+		max-width: 1400px;
+		margin: 0 auto;
+		padding: 24px 20px;
+		font-family: "Segoe UI", Arial, sans-serif;
+	}
+	.att-filters {
+		display: flex;
+		gap: 10px;
+		flex-wrap: wrap;
+		align-items: end;
+		background: #fff;
+		border: 1px solid #e2e6ea;
+		border-radius: 10px;
+		padding: 14px 16px;
+		margin-bottom: 18px;
+	}
+	.att-filters label {
+		font-size: 11px;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.3px;
+		color: #8d99a6;
+		display: block;
+		margin-bottom: 4px;
+	}
+	.att-filters input,
+	.att-filters select {
+		height: 34px;
+		border: 1px solid #d8dde2;
+		border-radius: 6px;
+		padding: 0 10px;
+		font-size: 13px;
+		min-width: 150px;
+	}
+	.att-btn {
+		height: 34px;
+		padding: 0 18px;
+		border: none;
+		border-radius: 6px;
+		background: #1b6bc4;
+		color: #fff;
+		font-weight: 600;
+		font-size: 13px;
+		cursor: pointer;
+	}
+	.att-btn:hover {
+		background: #14498f;
+	}
+
+	.att-tiles {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+		gap: 10px;
+		margin-bottom: 18px;
+	}
+	.att-tile {
+		border-radius: 8px;
+		padding: 12px 15px;
+		color: #fff;
+	}
+	.att-tile .lbl {
+		font-size: 10.5px;
+		font-weight: 600;
+		text-transform: uppercase;
+		opacity: 0.9;
+	}
+	.att-tile .val {
+		font-size: 26px;
+		font-weight: 800;
+		margin-top: 2px;
+	}
+	.tg {
+		background: linear-gradient(135deg, #2e9e5b, #1d6b3c);
+	}
+	.tr {
+		background: linear-gradient(135deg, #d0433f, #96201d);
+	}
+	.tb {
+		background: linear-gradient(135deg, #1f6fd0, #14498f);
+	}
+	.ta {
+		background: linear-gradient(135deg, #e0a020, #a97210);
+	}
+	.tp {
+		background: linear-gradient(135deg, #7e57c2, #543a87);
+	}
+	.ts {
+		background: linear-gradient(135deg, #546e7a, #37474f);
+	}
+
+	.att-chart-card {
+		background: #fff;
+		border: 1px solid #e2e6ea;
+		border-radius: 10px;
+		padding: 16px;
+		margin-bottom: 18px;
+		max-width: 340px;
+	}
+	.att-chart-title {
+		font-size: 12.5px;
+		font-weight: 700;
+		color: #1f272e;
+		margin-bottom: 8px;
+	}
+
+	.att-table-wrap {
+		background: #fff;
+		border: 1px solid #e2e6ea;
+		border-radius: 10px;
+		overflow: auto;
+	}
+	table.att-table {
+		width: 100%;
+		border-collapse: collapse;
+		min-width: 1000px;
+		font-size: 12.5px;
+	}
+	.att-table th {
+		background: #f4f5f6;
+		text-align: left;
+		padding: 9px 10px;
+		font-size: 10.5px;
+		text-transform: uppercase;
+		color: #8d99a6;
+		border-bottom: 1px solid #e2e6ea;
+		position: sticky;
+		top: 0;
+		white-space: nowrap;
+	}
+	.att-table td {
+		padding: 8px 10px;
+		border-bottom: 1px solid #edf0f2;
+		white-space: nowrap;
+	}
+	.att-table tr:hover td {
+		background: #f8f9fa;
+	}
+	.att-badge {
+		display: inline-block;
+		padding: 2px 9px;
+		border-radius: 20px;
+		font-size: 10.5px;
+		font-weight: 600;
+	}
+	.b-present {
+		background: #e7f4ee;
+		color: #178a5c;
+	}
+	.b-absent {
+		background: #f9ece9;
+		color: #c2402a;
+	}
+	.b-leave {
+		background: #e8f0f7;
+		color: #1b6bc4;
+	}
+	.b-half {
+		background: #f9f1e2;
+		color: #b97b0f;
+	}
+	.dot-red {
+		color: #c2402a;
+		font-weight: 700;
+	}
+	.att-empty {
+		padding: 40px;
+		text-align: center;
+		color: #98a4b0;
+	}
+</style>
+
+<div class="att-wrap">
+	<h1 style="font-size: 22px; color: #0d2137; margin-bottom: 4px">Attendance Dashboard</h1>
+	<p style="color: #6c7680; font-size: 13px; margin-bottom: 18px">
+		Live data from Attendance records
+	</p>
+
+	<div class="att-filters">
+		<div><label>From Date</label><input type="date" id="fltFrom" /></div>
+		<div><label>To Date</label><input type="date" id="fltTo" /></div>
+		<div>
+			<label>Department</label
+			><select id="fltDept">
+				<option value="">All Departments</option>
+			</select>
+		</div>
+		<div>
+			<label>Employee</label
+			><input type="text" id="fltEmp" placeholder="Search employee..." />
+		</div>
+		<button class="att-btn" id="btnLoad">Apply</button>
+	</div>
+
+	<div class="att-tiles" id="tiles"></div>
+
+	<div class="att-chart-card">
+		<div class="att-chart-title">Status Breakdown</div>
+		<canvas id="statusChart" height="180"></canvas>
+	</div>
+
+	<div class="att-table-wrap">
+		<table class="att-table">
+			<thead>
+				<tr>
+					<th>Job No.</th>
+					<th>Name</th>
+					<th>Date</th>
+					<th>Day</th>
+					<th>Status</th>
+					<th>Shift</th>
+					<th>In</th>
+					<th>Out</th>
+					<th>Hours</th>
+					<th>Late</th>
+					<th>Early</th>
+					<th>OT</th>
+				</tr>
+			</thead>
+			<tbody id="tblBody">
+				<tr>
+					<td colspan="12" class="att-empty">Select a date range and click Apply</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<script>
+	(function () {
+		function callMethod(method, args) {
+			return new Promise((resolve, reject) => {
+				if (window.frappe && frappe.call) {
+					frappe.call({
+						method,
+						args,
+						callback: (r) => resolve(r.message),
+						error: reject,
+					});
+				} else {
+					const qs = new URLSearchParams(args || {}).toString();
+					fetch("/api/method/" + method + "?" + qs, { credentials: "same-origin" })
+						.then((r) => r.json())
+						.then((j) => resolve(j.message))
+						.catch(reject);
+				}
+			});
+		}
+
+		function today() {
+			return new Date().toISOString().split("T")[0];
+		}
+		function firstOfMonth() {
+			const d = new Date();
+			d.setDate(1);
+			return d.toISOString().split("T")[0];
+		}
+
+		let statusChart = null;
+
+		function badge(status) {
+			const s = (status || "").toLowerCase();
+			let cls = "b-half";
+			if (s.includes("present")) cls = "b-present";
+			else if (s.includes("absent")) cls = "b-absent";
+			else if (s.includes("leave")) cls = "b-leave";
+			return `<span class="att-badge ${cls}">${status || "-"}</span>`;
+		}
+
+		function renderTiles(s) {
+			const tiles = [
+				["Present", s.present || 0, "tg"],
+				["Absent", s.absent || 0, "tr"],
+				["On Leave", s.on_leave || 0, "tb"],
+				["Half Day", s.half_day || 0, "ta"],
+				["Late Entry", s.late_entry || 0, "tp"],
+				["Total Hours", s.total_hours || 0, "ts"],
+			];
+			document.getElementById("tiles").innerHTML = tiles
+				.map(
+					([l, v, c]) =>
+						`<div class="att-tile ${c}"><div class="lbl">${l}</div><div class="val">${v}</div></div>`,
+				)
+				.join("");
+		}
+
+		function renderChart(s) {
+			const ctx = document.getElementById("statusChart");
+			if (statusChart) statusChart.destroy();
+			statusChart = new Chart(ctx, {
+				type: "doughnut",
+				data: {
+					labels: ["Present", "Absent", "On Leave", "Half Day"],
+					datasets: [
+						{
+							data: [
+								s.present || 0,
+								s.absent || 0,
+								s.on_leave || 0,
+								s.half_day || 0,
+							],
+							backgroundColor: ["#178a5c", "#c2402a", "#1b6bc4", "#b97b0f"],
+						},
+					],
+				},
+				options: { plugins: { legend: { position: "bottom" } } },
+			});
+		}
+
+		function renderTable(rows) {
+			const body = document.getElementById("tblBody");
+			if (!rows.length) {
+				body.innerHTML = `<tr><td colspan="12" class="att-empty">No attendance records found for this range.</td></tr>`;
+				return;
+			}
+			body.innerHTML = rows
+				.map(
+					(r) => `
+			<tr>
+				<td>${r.job_number}</td>
+				<td>${r.employee_name}</td>
+				<td>${r.date}</td>
+				<td>${r.day}</td>
+				<td>${badge(r.status)}</td>
+				<td>${r.shift || "-"}</td>
+				<td>${r.in_time}</td>
+				<td>${r.out_time}</td>
+				<td>${r.working_hours}</td>
+				<td>${r.late_entry ? '<span class="dot-red">●</span>' : "-"}</td>
+				<td>${r.early_exit ? '<span class="dot-red">●</span>' : "-"}</td>
+				<td>${r.overtime ? "Yes" : "-"}</td>
+			</tr>`,
+				)
+				.join("");
+		}
+
+		function loadData() {
+			const args = {
+				from_date: document.getElementById("fltFrom").value,
+				to_date: document.getElementById("fltTo").value,
+				department: document.getElementById("fltDept").value || null,
+				employee: document.getElementById("fltEmp").value || null,
+			};
+			if (!args.from_date || !args.to_date) {
+				alert("Please select From and To dates");
+				return;
+			}
+
+			document.getElementById("tblBody").innerHTML =
+				`<tr><td colspan="12" class="att-empty">Loading...</td></tr>`;
+
+			callMethod("ppecon_erp.www.attendance_dashboard.index.get_attendance_data", args)
+				.then((d) => {
+					if (!d) return;
+					renderTiles(d.summary);
+					renderChart(d.summary);
+					renderTable(d.rows);
+				})
+				.catch((e) => {
+					console.error("Attendance dashboard error:", e);
+					document.getElementById("tblBody").innerHTML =
+						`<tr><td colspan="12" class="att-empty">Failed to load data.</td></tr>`;
+				});
+		}
+
+		function loadDepartments() {
+			callMethod("ppecon_erp.www.attendance_dashboard.index.get_departments").then(
+				(depts) => {
+					const sel = document.getElementById("fltDept");
+					(depts || []).forEach((d) => {
+						const opt = document.createElement("option");
+						opt.value = d;
+						opt.textContent = d;
+						sel.appendChild(opt);
+					});
+				},
+			);
+		}
+
+		function start() {
+			document.getElementById("fltFrom").value = firstOfMonth();
+			document.getElementById("fltTo").value = today();
+			document.getElementById("btnLoad").addEventListener("click", loadData);
+			loadDepartments();
+			loadData();
+		}
+
+		if (window.frappe && frappe.ready) frappe.ready(start);
+		else {
+			let tries = 0;
+			const timer = setInterval(() => {
+				tries++;
+				if (window.frappe && frappe.ready) {
+					clearInterval(timer);
+					frappe.ready(start);
+				} else if (tries > 20) {
+					clearInterval(timer);
+					start();
+				}
+			}, 150);
+		}
+	})();
+</script>
