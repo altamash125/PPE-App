@@ -168,7 +168,7 @@ doc_events = {
   },
 
     "Project": {
-        "on_update": "ppecon_erp.project.project_notifications.notify_design_representative"
+        "on_update": "ppecon_erp.project.project_notification.notify_design_representative"
      },
   "Opportunity": {
         "on_update": "ppecon_erp.opportunity.follow_up.notify_on_followup_set"
