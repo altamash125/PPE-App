@@ -113,6 +113,11 @@
 		border-color: #1b6bc4;
 		color: #1b6bc4;
 	}
+	.att-btn.sm {
+		height: 30px;
+		padding: 0 12px;
+		font-size: 12px;
+	}
 
 	.att-tiles {
 		display: grid;
@@ -166,6 +171,69 @@
 	}
 	.to {
 		background: linear-gradient(135deg, #c2185b, #7a0e3a);
+	}
+
+	/* ---------- today's live check-in panel ---------- */
+	.today-card {
+		background: #fff;
+		border: 1px solid #e2e6ea;
+		border-radius: 10px;
+		padding: 16px;
+		margin-bottom: 20px;
+		box-shadow: 0 1px 3px rgba(16, 42, 77, 0.06);
+	}
+	.today-head {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-wrap: wrap;
+		margin-bottom: 12px;
+	}
+	.today-head .att-card-title {
+		margin: 0;
+	}
+	.today-head input[type="date"],
+	.today-head input[type="text"] {
+		height: 30px;
+		border: 1px solid #d8dde2;
+		border-radius: 6px;
+		padding: 0 10px;
+		font-size: 12.5px;
+	}
+	.today-head input[type="text"] {
+		min-width: 180px;
+	}
+	.today-head .spacer {
+		margin-left: auto;
+	}
+	.today-live {
+		font-size: 11px;
+		color: #98a4b0;
+	}
+	.today-live label {
+		cursor: pointer;
+		font-weight: 600;
+	}
+	.today-tiles {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+		gap: 10px;
+		margin-bottom: 12px;
+	}
+	.today-tiles .att-tile {
+		padding: 11px 13px;
+	}
+	.today-tiles .att-tile .val {
+		font-size: 21px;
+	}
+	.chip-live {
+		display: inline-block;
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: #2e9e5b;
+		margin-right: 5px;
+		vertical-align: middle;
 	}
 
 	.att-charts {
@@ -233,11 +301,18 @@
 		box-shadow: 0 1px 3px rgba(16, 42, 77, 0.06);
 		max-height: 640px;
 	}
+	.att-table-wrap.short {
+		max-height: 430px;
+		box-shadow: none;
+	}
 	table.att-table {
 		width: 100%;
 		border-collapse: collapse;
-		min-width: 1400px;
+		min-width: 1480px;
 		font-size: 12.5px;
+	}
+	table.att-table.narrow {
+		min-width: 1180px;
 	}
 	.att-table th {
 		background: #f4f5f6;
@@ -275,6 +350,12 @@
 	.att-table tr.row-absent:hover td {
 		background: #f9ece9;
 	}
+	.att-table tr.row-open td {
+		background: #fffaf0;
+	}
+	.att-table tr.row-open:hover td {
+		background: #fdf3e0;
+	}
 	.att-table tr.group-start td {
 		border-top: 2px solid #dde6f0;
 	}
@@ -300,6 +381,22 @@
 	.b-half {
 		background: #f9f1e2;
 		color: #b97b0f;
+	}
+	.b-done {
+		background: #e7f4ee;
+		color: #178a5c;
+	}
+	.b-open {
+		background: #fbeee0;
+		color: #b0600b;
+	}
+	.b-missing {
+		background: #f9ece9;
+		color: #c2402a;
+	}
+	.b-none {
+		background: #f1f3f5;
+		color: #8d99a6;
 	}
 	.dot-red {
 		color: #c2402a;
@@ -358,6 +455,53 @@
 	<!-- ================= TILES ================= -->
 	<div class="att-tiles" id="tiles"></div>
 
+	<!-- ============ TODAY'S CHECK-IN / CHECK-OUT ============ -->
+	<div class="today-card">
+		<div class="today-head">
+			<div class="att-card-title">
+				<span class="chip-live"></span>Check-in / Check-out log
+			</div>
+			<input type="date" id="todayDate" />
+			<button class="pb-chip active" data-tstate="all">All</button>
+			<button class="pb-chip" data-tstate="Completed">Completed</button>
+			<button class="pb-chip" data-tstate="Incomplete">Incomplete</button>
+			<input type="text" id="todaySearch" placeholder="Search name or site..." />
+			<div class="spacer"></div>
+			<span class="today-live">
+				<label><input type="checkbox" id="todayAuto" checked /> Auto-refresh 60s</label>
+				<span id="todayAsOf"></span>
+			</span>
+			<button class="att-btn ghost sm" id="btnTodayRefresh">⟳ Refresh</button>
+			<button class="att-btn ghost sm" id="btnTodayExport">↓ CSV</button>
+		</div>
+
+		<div class="today-tiles" id="todayTiles"></div>
+
+		<div class="att-table-wrap short">
+			<table class="att-table narrow">
+				<thead>
+					<tr>
+						<th data-tkey="job_number">Job No.</th>
+						<th data-tkey="employee_name">Name</th>
+						<th data-tkey="department">Department</th>
+						<th data-tkey="check_in_time">Check-In</th>
+						<th data-tkey="check_in_from">Check-In From</th>
+						<th data-tkey="check_out_time">Check-Out</th>
+						<th data-tkey="check_out_from">Check-Out From</th>
+						<th data-tkey="duration_hours">Duration</th>
+						<th data-tkey="log_count">Logs</th>
+						<th data-tkey="completion">Status</th>
+					</tr>
+				</thead>
+				<tbody id="todayBody">
+					<tr>
+						<td colspan="10" class="att-loading">Loading check-in log...</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+
 	<!-- ================= CHARTS ================= -->
 	<div class="att-charts">
 		<div class="att-card">
@@ -396,6 +540,7 @@
 					<th data-key="check_in_from">Check-In From</th>
 					<th data-key="check_out_time">Time of Leave</th>
 					<th data-key="check_out_from">Check-Out From</th>
+					<th data-key="completion">Punch Status</th>
 					<th data-key="working_hours">Sys Hours</th>
 					<th data-key="actual_hours">Actual Hours</th>
 					<th data-key="late_entry">Late</th>
@@ -405,7 +550,7 @@
 			</thead>
 			<tbody id="tblBody">
 				<tr>
-					<td colspan="15" class="att-empty">Select a range and click Apply</td>
+					<td colspan="16" class="att-empty">Select a range and click Apply</td>
 				</tr>
 			</tbody>
 		</table>
@@ -415,12 +560,20 @@
 <script>
 	(function () {
 		const METHOD_PREFIX = "ppecon_erp.www.attendance_dashboard.index";
-		const COLSPAN = 15;
+		const COLSPAN = 16;
+		const TODAY_COLSPAN = 10;
+
 		let allRows = [];
 		let statusChart = null,
 			deptChart = null;
 		let sortKey = null,
 			sortDir = "asc"; // null = keep backend order (grouped, latest date first)
+
+		let todayRows = [];
+		let todayState = "all";
+		let todaySortKey = null,
+			todaySortDir = "asc";
+		let todayTimer = null;
 
 		function callMethod(method, args) {
 			return new Promise((resolve, reject) => {
@@ -476,6 +629,17 @@
 			return `<span class="att-badge ${cls}">${status || "-"}</span>`;
 		}
 
+		function punchBadge(state) {
+			const map = {
+				Completed: "b-done",
+				Incomplete: "b-open",
+				"Missing Check-in": "b-missing",
+				"No Check-in": "b-none",
+			};
+			return `<span class="att-badge ${map[state] || "b-none"}">${state || "-"}</span>`;
+		}
+
+		/* ================= SUMMARY TILES ================= */
 		function renderTiles(s) {
 			const tiles = [
 				["Present", s.present || 0, "tg", (s.attendance_pct || 0) + "% of marked days"],
@@ -483,6 +647,7 @@
 				["On Leave", s.on_leave || 0, "tb", ""],
 				["Half Day", s.half_day || 0, "ta", ""],
 				["Late Entry", s.late_entry || 0, "tp", ""],
+				["Incomplete Punch", s.incomplete || 0, "tr", "no check-out"],
 				["Sys Hours", s.total_hours || 0, "ts", (s.total_records || 0) + " records"],
 				["Actual Hours", s.total_actual_hours || 0, "tb", "from check-in/out"],
 				[
@@ -500,6 +665,228 @@
 				.join("");
 		}
 
+		/* ================= TODAY PANEL ================= */
+		function renderTodayTiles(s) {
+			const tiles = [
+				["Checked In", s.total || 0, "tb", (s.sites || 0) + " site(s)"],
+				["Completed", s.completed || 0, "tg", "in + out done"],
+				["Incomplete", s.incomplete || 0, "ta", "no check-out yet"],
+				["Missing Check-in", s.missing_checkin || 0, "tr", "out without in"],
+				[
+					"Not Checked In",
+					s.not_checked_in || 0,
+					"ts",
+					(s.active_employees || 0) + " active staff",
+				],
+			];
+			document.getElementById("todayTiles").innerHTML = tiles
+				.map(
+					([l, v, c, sub]) =>
+						`<div class="att-tile ${c}"><div class="lbl">${l}</div><div class="val">${v}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div>`,
+				)
+				.join("");
+		}
+
+		function sortGeneric(rows, key, dir) {
+			if (!key) return rows;
+			const m = dir === "asc" ? 1 : -1;
+			return rows.slice().sort((a, b) => {
+				let va = a[key],
+					vb = b[key];
+				if (typeof va === "boolean") {
+					va = va ? 1 : 0;
+					vb = vb ? 1 : 0;
+				}
+				if (va === undefined || va === null) va = "";
+				if (vb === undefined || vb === null) vb = "";
+				if (va < vb) return -1 * m;
+				if (va > vb) return 1 * m;
+				return 0;
+			});
+		}
+
+		function todayFiltered() {
+			const q = (document.getElementById("todaySearch").value || "").toLowerCase();
+			let rows = todayRows;
+			if (todayState !== "all") rows = rows.filter((r) => r.completion === todayState);
+			if (q) {
+				rows = rows.filter((r) =>
+					[
+						r.employee_name,
+						r.job_number,
+						r.department,
+						r.designation,
+						r.check_in_from,
+						r.check_out_from,
+						r.completion,
+					]
+						.filter(Boolean)
+						.join(" ")
+						.toLowerCase()
+						.includes(q),
+				);
+			}
+			return sortGeneric(rows, todaySortKey, todaySortDir);
+		}
+
+		function renderTodayTable() {
+			const rows = todayFiltered();
+			const body = document.getElementById("todayBody");
+
+			document.querySelectorAll(".att-table th[data-tkey]").forEach((th) => {
+				th.classList.toggle("sorted", th.dataset.tkey === todaySortKey);
+				th.textContent = th.textContent.replace(/ [↑↓]$/, "");
+				if (th.dataset.tkey === todaySortKey)
+					th.textContent += todaySortDir === "asc" ? " ↑" : " ↓";
+			});
+
+			if (!rows.length) {
+				body.innerHTML = `<tr><td colspan="${TODAY_COLSPAN}" class="att-empty">No check-in records for this day.</td></tr>`;
+				return;
+			}
+
+			body.innerHTML = rows
+				.map(
+					(r) => `
+			<tr class="${r.completion === "Incomplete" ? "row-open" : ""}">
+				<td>${r.job_number}</td>
+				<td>${r.employee_name}</td>
+				<td class="site-txt">${r.department}</td>
+				<td>${r.check_in_time}</td>
+				<td class="site-txt">${r.check_in_from}</td>
+				<td>${r.check_out_time}</td>
+				<td class="site-txt">${r.check_out_from}</td>
+				<td class="actual-hrs">${r.duration}${r.running ? " ⏱" : ""}</td>
+				<td>${r.log_count}</td>
+				<td>${punchBadge(r.completion)}</td>
+			</tr>`,
+				)
+				.join("");
+		}
+
+		function loadToday() {
+			const date = document.getElementById("todayDate").value;
+			const department = document.getElementById("fltDept").value;
+			if (!date) return;
+
+			const args = { date };
+			if (department) args.department = department;
+
+			callMethod(METHOD_PREFIX + ".get_today_checkins", args)
+				.then((d) => {
+					if (!d) return;
+					if (d.error) {
+						document.getElementById("todayBody").innerHTML =
+							`<tr><td colspan="${TODAY_COLSPAN}" class="att-empty">Error: ${d.error}</td></tr>`;
+						return;
+					}
+					todayRows = d.rows || [];
+					const s = d.summary || {};
+					renderTodayTiles(s);
+					renderTodayTable();
+					document.getElementById("todayAsOf").textContent = s.is_today
+						? "· as of " + (s.as_of || "")
+						: "· " + (s.date || "");
+				})
+				.catch((e) => {
+					console.error("Today check-in load error:", e);
+					document.getElementById("todayBody").innerHTML =
+						`<tr><td colspan="${TODAY_COLSPAN}" class="att-empty">Failed to load check-in log. Check console.</td></tr>`;
+				});
+		}
+
+		function exportTodayCsv() {
+			const rows = todayFiltered();
+			const head = [
+				"Job No",
+				"Name",
+				"Department",
+				"Date",
+				"Check-In",
+				"Check-In From",
+				"Check-Out",
+				"Check-Out From",
+				"Duration",
+				"Logs",
+				"Status",
+			];
+			const esc = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+			const lines = [head.map(esc).join(",")];
+			rows.forEach((r) => {
+				lines.push(
+					[
+						r.job_number,
+						r.employee_name,
+						r.department,
+						r.date,
+						r.check_in_time,
+						r.check_in_from,
+						r.check_out_time,
+						r.check_out_from,
+						r.duration,
+						r.log_count,
+						r.completion,
+					]
+						.map(esc)
+						.join(","),
+				);
+			});
+			const blob = new Blob(["\ufeff" + lines.join("\n")], {
+				type: "text/csv;charset=utf-8;",
+			});
+			const a = document.createElement("a");
+			a.href = URL.createObjectURL(blob);
+			a.download = `checkin_log_${document.getElementById("todayDate").value}.csv`;
+			a.click();
+		}
+
+		function setupTodayPanel() {
+			document.getElementById("todayDate").value = fmtDate(new Date());
+
+			document.querySelectorAll(".pb-chip[data-tstate]").forEach((chip) => {
+				chip.addEventListener("click", () => {
+					document
+						.querySelectorAll(".pb-chip[data-tstate]")
+						.forEach((c) => c.classList.remove("active"));
+					chip.classList.add("active");
+					todayState = chip.dataset.tstate;
+					renderTodayTable();
+				});
+			});
+
+			document.querySelectorAll(".att-table th[data-tkey]").forEach((th) => {
+				th.addEventListener("click", () => {
+					const key = th.dataset.tkey;
+					if (todaySortKey === key)
+						todaySortDir = todaySortDir === "asc" ? "desc" : "asc";
+					else {
+						todaySortKey = key;
+						todaySortDir = "asc";
+					}
+					renderTodayTable();
+				});
+			});
+
+			document.getElementById("todayDate").addEventListener("change", loadToday);
+			document.getElementById("todaySearch").addEventListener("input", renderTodayTable);
+			document.getElementById("btnTodayRefresh").addEventListener("click", loadToday);
+			document.getElementById("btnTodayExport").addEventListener("click", exportTodayCsv);
+			document.getElementById("todayAuto").addEventListener("change", setupAutoRefresh);
+
+			setupAutoRefresh();
+		}
+
+		function setupAutoRefresh() {
+			if (todayTimer) clearInterval(todayTimer);
+			if (!document.getElementById("todayAuto").checked) return;
+			todayTimer = setInterval(() => {
+				if (document.hidden) return;
+				if (document.getElementById("todayDate").value === fmtDate(new Date()))
+					loadToday();
+			}, 60000);
+		}
+
+		/* ================= CHARTS ================= */
 		function showChartEmpty(ctx, msg) {
 			ctx.style.display = "none";
 			const box = ctx.parentElement;
@@ -600,24 +987,7 @@
 			});
 		}
 
-		function sortRows(rows) {
-			if (!sortKey) return rows; // keep backend order: employee ASC, date DESC (latest first)
-			const dir = sortDir === "asc" ? 1 : -1;
-			return rows.slice().sort((a, b) => {
-				let va = a[sortKey],
-					vb = b[sortKey];
-				if (typeof va === "boolean") {
-					va = va ? 1 : 0;
-					vb = vb ? 1 : 0;
-				}
-				if (va === undefined || va === null) va = "";
-				if (vb === undefined || vb === null) vb = "";
-				if (va < vb) return -1 * dir;
-				if (va > vb) return 1 * dir;
-				return 0;
-			});
-		}
-
+		/* ================= MAIN TABLE ================= */
 		function filteredRows() {
 			const q = (document.getElementById("tblSearch").value || "").toLowerCase();
 			let rows = allRows;
@@ -631,6 +1001,7 @@
 						r.job_number,
 						r.check_in_from,
 						r.check_out_from,
+						r.completion,
 					]
 						.filter(Boolean)
 						.join(" ")
@@ -638,7 +1009,7 @@
 						.includes(q),
 				);
 			}
-			return sortRows(rows);
+			return sortGeneric(rows, sortKey, sortDir);
 		}
 
 		function renderTable() {
@@ -646,7 +1017,7 @@
 			document.getElementById("rowCount").textContent =
 				`${rows.length} of ${allRows.length} records`;
 
-			document.querySelectorAll(".att-table th").forEach((th) => {
+			document.querySelectorAll(".att-table th[data-key]").forEach((th) => {
 				th.classList.toggle("sorted", th.dataset.key === sortKey);
 				th.textContent = th.textContent.replace(/ [↑↓]$/, "");
 				if (th.dataset.key === sortKey) th.textContent += sortDir === "asc" ? " ↑" : " ↓";
@@ -672,7 +1043,7 @@
 						: `<span class="dot-grey">-</span>`;
 
 					return `
-			<tr class="${isAbsent ? "row-absent" : ""} ${isNewGroup ? "group-start" : ""}">
+			<tr class="${isAbsent ? "row-absent" : r.completion === "Incomplete" ? "row-open" : ""} ${isNewGroup ? "group-start" : ""}">
 				<td>${r.job_number}</td>
 				<td>${r.employee_name}</td>
 				<td>${r.date}</td>
@@ -683,6 +1054,7 @@
 				<td class="site-txt">${r.check_in_from}</td>
 				<td>${r.check_out_time}</td>
 				<td class="site-txt">${r.check_out_from}</td>
+				<td>${punchBadge(r.completion)}</td>
 				<td>${r.working_hours}</td>
 				<td class="actual-hrs">${r.actual_hours}</td>
 				<td>${r.late_entry ? '<span class="dot-red">●</span>' : '<span class="dot-grey">-</span>'}</td>
@@ -706,6 +1078,7 @@
 				"Check-In From",
 				"Time of Leave",
 				"Check-Out From",
+				"Punch Status",
 				"Sys Hours",
 				"Actual Hours",
 				"Late",
@@ -727,6 +1100,7 @@
 						r.check_in_from,
 						r.check_out_time,
 						r.check_out_from,
+						r.completion,
 						r.working_hours,
 						r.actual_hours,
 						r.late_entry ? "Yes" : "No",
@@ -800,10 +1174,10 @@
 		}
 
 		function setupPeriodBar() {
-			document.querySelectorAll(".pb-chip").forEach((chip) => {
+			document.querySelectorAll(".pb-chip[data-period]").forEach((chip) => {
 				chip.addEventListener("click", () => {
 					document
-						.querySelectorAll(".pb-chip")
+						.querySelectorAll(".pb-chip[data-period]")
 						.forEach((c) => c.classList.remove("active"));
 					chip.classList.add("active");
 					const [f, t] = resolvePeriod(chip.dataset.period);
@@ -815,7 +1189,7 @@
 		}
 
 		function setupTableSort() {
-			document.querySelectorAll(".att-table th").forEach((th) => {
+			document.querySelectorAll(".att-table th[data-key]").forEach((th) => {
 				th.addEventListener("click", () => {
 					const key = th.dataset.key;
 					if (sortKey === key) sortDir = sortDir === "asc" ? "desc" : "asc";
@@ -832,17 +1206,23 @@
 			loadDepartments();
 			setupPeriodBar();
 			setupTableSort();
+			setupTodayPanel();
 
-			document.getElementById("btnLoad").addEventListener("click", loadData);
+			document.getElementById("btnLoad").addEventListener("click", () => {
+				loadData();
+				loadToday();
+			});
 			document.getElementById("btnExport").addEventListener("click", exportCsv);
 			document.getElementById("tblSearch").addEventListener("input", renderTable);
+
+			loadToday();
 
 			callMethod(METHOD_PREFIX + ".get_latest_range").then((r) => {
 				if (r && r.from_date) {
 					document.getElementById("fltFrom").value = r.from_date;
 					document.getElementById("fltTo").value = r.to_date;
 					document
-						.querySelectorAll(".pb-chip")
+						.querySelectorAll(".pb-chip[data-period]")
 						.forEach((c) => c.classList.remove("active"));
 				} else {
 					const [f, t] = resolvePeriod("this_month");
