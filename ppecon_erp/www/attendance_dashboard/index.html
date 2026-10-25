@@ -103,6 +103,10 @@
 	.att-btn:hover {
 		background: #14498f;
 	}
+	.att-btn:disabled {
+		opacity: 0.6;
+		cursor: wait;
+	}
 	.att-btn.ghost {
 		background: #fff;
 		color: #44536b;
@@ -112,6 +116,17 @@
 	.att-btn.ghost:hover {
 		border-color: #1b6bc4;
 		color: #1b6bc4;
+	}
+	.att-btn.pdf {
+		background: #fff;
+		color: #c2402a;
+		border: 1px solid #e8c3bb;
+		margin-left: 0;
+	}
+	.att-btn.pdf:hover {
+		background: #c2402a;
+		color: #fff;
+		border-color: #c2402a;
 	}
 	.att-btn.sm {
 		height: 30px;
@@ -260,6 +275,12 @@
 		color: #1f272e;
 		margin-bottom: 10px;
 	}
+	.att-card-title .hint {
+		font-weight: 400;
+		color: #98a4b0;
+		font-size: 11px;
+		margin-left: 6px;
+	}
 	.chart-box {
 		position: relative;
 		height: 260px;
@@ -276,13 +297,21 @@
 		margin-bottom: 10px;
 		flex-wrap: wrap;
 	}
-	.att-table-toolbar input {
+	.att-table-toolbar input[type="text"] {
 		height: 32px;
 		border: 1px solid #d8dde2;
 		border-radius: 6px;
 		padding: 0 10px;
 		font-size: 12.5px;
 		min-width: 220px;
+	}
+	.att-table-toolbar select {
+		height: 32px;
+		border: 1px solid #d8dde2;
+		border-radius: 6px;
+		padding: 0 8px;
+		font-size: 12.5px;
+		background: #fff;
 	}
 	.att-table-toolbar .hint {
 		font-size: 11px;
@@ -305,6 +334,10 @@
 		max-height: 430px;
 		box-shadow: none;
 	}
+	.att-table-wrap.summary {
+		max-height: 380px;
+		margin-bottom: 20px;
+	}
 	table.att-table {
 		width: 100%;
 		border-collapse: collapse;
@@ -313,6 +346,9 @@
 	}
 	table.att-table.narrow {
 		min-width: 1180px;
+	}
+	table.att-table.compact {
+		min-width: 980px;
 	}
 	.att-table th {
 		background: #f4f5f6;
@@ -359,6 +395,9 @@
 	.att-table tr.group-start td {
 		border-top: 2px solid #dde6f0;
 	}
+	.att-table tr.clickable {
+		cursor: pointer;
+	}
 	.att-badge {
 		display: inline-block;
 		padding: 2px 10px;
@@ -397,6 +436,18 @@
 	.b-none {
 		background: #f1f3f5;
 		color: #8d99a6;
+	}
+	.num-red {
+		color: #c2402a;
+		font-weight: 700;
+	}
+	.num-blue {
+		color: #1b6bc4;
+		font-weight: 700;
+	}
+	.num-amber {
+		color: #b97b0f;
+		font-weight: 700;
 	}
 	.dot-red {
 		color: #c2402a;
@@ -514,6 +565,41 @@
 		</div>
 	</div>
 
+	<!-- ============ EMPLOYEE-WISE SUMMARY ============ -->
+	<div class="att-card" style="margin-bottom: 20px">
+		<div class="att-card-title">
+			Employee-wise Summary
+			<span class="hint"
+				>absent / leave days per employee · click a row to filter the detail table
+				below</span
+			>
+		</div>
+		<div class="att-table-wrap summary">
+			<table class="att-table compact">
+				<thead>
+					<tr>
+						<th data-skey="employee_name">Name</th>
+						<th data-skey="employee">Job No.</th>
+						<th data-skey="department">Department</th>
+						<th data-skey="present">Present</th>
+						<th data-skey="absent">Absent</th>
+						<th data-skey="on_leave">On Leave</th>
+						<th data-skey="half_day">Half Day</th>
+						<th data-skey="late">Late</th>
+						<th data-skey="incomplete">Incomplete</th>
+						<th data-skey="actual_hours">Actual Hrs</th>
+						<th data-skey="ot_hours">OT Hrs</th>
+					</tr>
+				</thead>
+				<tbody id="sumBody">
+					<tr>
+						<td colspan="11" class="att-empty">Select a range and click Apply</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+
 	<!-- ================= TABLE ================= -->
 	<div class="att-table-toolbar">
 		<input
@@ -523,6 +609,11 @@
 		/>
 		<span class="hint">Grouped by employee · click any column to sort instead</span>
 		<button class="att-btn ghost" id="btnExport">↓ Export CSV</button>
+		<select id="pdfLang" title="PDF language">
+			<option value="ar">PDF: Arabic (عربي)</option>
+			<option value="en">PDF: English</option>
+		</select>
+		<button class="att-btn pdf" id="btnPdf">↓ Export PDF</button>
 		<span class="att-count" id="rowCount"></span>
 	</div>
 
@@ -562,18 +653,35 @@
 		const METHOD_PREFIX = "ppecon_erp.www.attendance_dashboard.index";
 		const COLSPAN = 16;
 		const TODAY_COLSPAN = 10;
+		const SUM_COLSPAN = 11;
 
 		let allRows = [];
+		let sumRows = [];
 		let statusChart = null,
 			deptChart = null;
 		let sortKey = null,
 			sortDir = "asc"; // null = keep backend order (grouped, latest date first)
+		let sumSortKey = "absent",
+			sumSortDir = "desc";
+		let loadSeq = 0; // guards against out-of-order responses
 
 		let todayRows = [];
 		let todayState = "all";
 		let todaySortKey = null,
 			todaySortDir = "asc";
 		let todayTimer = null;
+
+		const $ = (id) => document.getElementById(id);
+
+		// escape everything that comes from the database before putting it in innerHTML
+		function esc(v) {
+			return String(v == null ? "" : v)
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;")
+				.replace(/"/g, "&quot;")
+				.replace(/'/g, "&#39;");
+		}
 
 		function callMethod(method, args) {
 			return new Promise((resolve, reject) => {
@@ -614,7 +722,6 @@
 				start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 				end = new Date(now.getFullYear(), now.getMonth(), 0);
 			} else {
-				// this_month
 				start = new Date(now.getFullYear(), now.getMonth(), 1);
 			}
 			return [fmtDate(start), fmtDate(end)];
@@ -626,7 +733,7 @@
 			if (s.includes("present")) cls = "b-present";
 			else if (s.includes("absent")) cls = "b-absent";
 			else if (s.includes("leave")) cls = "b-leave";
-			return `<span class="att-badge ${cls}">${status || "-"}</span>`;
+			return `<span class="att-badge ${cls}">${esc(status || "-")}</span>`;
 		}
 
 		function punchBadge(state) {
@@ -636,12 +743,21 @@
 				"Missing Check-in": "b-missing",
 				"No Check-in": "b-none",
 			};
-			return `<span class="att-badge ${map[state] || "b-none"}">${state || "-"}</span>`;
+			return `<span class="att-badge ${map[state] || "b-none"}">${esc(state || "-")}</span>`;
+		}
+
+		function tilesHtml(tiles) {
+			return tiles
+				.map(
+					([l, v, c, sub]) =>
+						`<div class="att-tile ${c}"><div class="lbl">${l}</div><div class="val">${esc(v)}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ""}</div>`,
+				)
+				.join("");
 		}
 
 		/* ================= SUMMARY TILES ================= */
 		function renderTiles(s) {
-			const tiles = [
+			$("tiles").innerHTML = tilesHtml([
 				["Present", s.present || 0, "tg", (s.attendance_pct || 0) + "% of marked days"],
 				["Absent", s.absent || 0, "tr", ""],
 				["On Leave", s.on_leave || 0, "tb", ""],
@@ -656,18 +772,12 @@
 					"to",
 					(s.overtime_days || 0) + " OT day(s)",
 				],
-			];
-			document.getElementById("tiles").innerHTML = tiles
-				.map(
-					([l, v, c, sub]) =>
-						`<div class="att-tile ${c}"><div class="lbl">${l}</div><div class="val">${v}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div>`,
-				)
-				.join("");
+			]);
 		}
 
 		/* ================= TODAY PANEL ================= */
 		function renderTodayTiles(s) {
-			const tiles = [
+			$("todayTiles").innerHTML = tilesHtml([
 				["Checked In", s.total || 0, "tb", (s.sites || 0) + " site(s)"],
 				["Completed", s.completed || 0, "tg", "in + out done"],
 				["Incomplete", s.incomplete || 0, "ta", "no check-out yet"],
@@ -678,13 +788,7 @@
 					"ts",
 					(s.active_employees || 0) + " active staff",
 				],
-			];
-			document.getElementById("todayTiles").innerHTML = tiles
-				.map(
-					([l, v, c, sub]) =>
-						`<div class="att-tile ${c}"><div class="lbl">${l}</div><div class="val">${v}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div>`,
-				)
-				.join("");
+			]);
 		}
 
 		function sortGeneric(rows, key, dir) {
@@ -705,8 +809,16 @@
 			});
 		}
 
+		function updateSortArrows(selector, attr, activeKey, dir) {
+			document.querySelectorAll(selector).forEach((th) => {
+				th.classList.toggle("sorted", th.dataset[attr] === activeKey);
+				th.textContent = th.textContent.replace(/ [↑↓]$/, "");
+				if (th.dataset[attr] === activeKey) th.textContent += dir === "asc" ? " ↑" : " ↓";
+			});
+		}
+
 		function todayFiltered() {
-			const q = (document.getElementById("todaySearch").value || "").toLowerCase();
+			const q = ($("todaySearch").value || "").toLowerCase();
 			let rows = todayRows;
 			if (todayState !== "all") rows = rows.filter((r) => r.completion === todayState);
 			if (q) {
@@ -731,14 +843,8 @@
 
 		function renderTodayTable() {
 			const rows = todayFiltered();
-			const body = document.getElementById("todayBody");
-
-			document.querySelectorAll(".att-table th[data-tkey]").forEach((th) => {
-				th.classList.toggle("sorted", th.dataset.tkey === todaySortKey);
-				th.textContent = th.textContent.replace(/ [↑↓]$/, "");
-				if (th.dataset.tkey === todaySortKey)
-					th.textContent += todaySortDir === "asc" ? " ↑" : " ↓";
-			});
+			const body = $("todayBody");
+			updateSortArrows(".att-table th[data-tkey]", "tkey", todaySortKey, todaySortDir);
 
 			if (!rows.length) {
 				body.innerHTML = `<tr><td colspan="${TODAY_COLSPAN}" class="att-empty">No check-in records for this day.</td></tr>`;
@@ -749,15 +855,15 @@
 				.map(
 					(r) => `
 			<tr class="${r.completion === "Incomplete" ? "row-open" : ""}">
-				<td>${r.job_number}</td>
-				<td>${r.employee_name}</td>
-				<td class="site-txt">${r.department}</td>
-				<td>${r.check_in_time}</td>
-				<td class="site-txt">${r.check_in_from}</td>
-				<td>${r.check_out_time}</td>
-				<td class="site-txt">${r.check_out_from}</td>
-				<td class="actual-hrs">${r.duration}${r.running ? " ⏱" : ""}</td>
-				<td>${r.log_count}</td>
+				<td>${esc(r.job_number)}</td>
+				<td>${esc(r.employee_name)}</td>
+				<td class="site-txt">${esc(r.department)}</td>
+				<td>${esc(r.check_in_time)}</td>
+				<td class="site-txt">${esc(r.check_in_from)}</td>
+				<td>${esc(r.check_out_time)}</td>
+				<td class="site-txt">${esc(r.check_out_from)}</td>
+				<td class="actual-hrs">${esc(r.duration)}${r.running ? " ⏱" : ""}</td>
+				<td>${esc(r.log_count)}</td>
 				<td>${punchBadge(r.completion)}</td>
 			</tr>`,
 				)
@@ -765,8 +871,8 @@
 		}
 
 		function loadToday() {
-			const date = document.getElementById("todayDate").value;
-			const department = document.getElementById("fltDept").value;
+			const date = $("todayDate").value;
+			const department = $("fltDept").value;
 			if (!date) return;
 
 			const args = { date };
@@ -776,72 +882,72 @@
 				.then((d) => {
 					if (!d) return;
 					if (d.error) {
-						document.getElementById("todayBody").innerHTML =
-							`<tr><td colspan="${TODAY_COLSPAN}" class="att-empty">Error: ${d.error}</td></tr>`;
+						$("todayBody").innerHTML =
+							`<tr><td colspan="${TODAY_COLSPAN}" class="att-empty">Error: ${esc(d.error)}</td></tr>`;
 						return;
 					}
 					todayRows = d.rows || [];
 					const s = d.summary || {};
 					renderTodayTiles(s);
 					renderTodayTable();
-					document.getElementById("todayAsOf").textContent = s.is_today
+					$("todayAsOf").textContent = s.is_today
 						? "· as of " + (s.as_of || "")
 						: "· " + (s.date || "");
 				})
 				.catch((e) => {
 					console.error("Today check-in load error:", e);
-					document.getElementById("todayBody").innerHTML =
+					$("todayBody").innerHTML =
 						`<tr><td colspan="${TODAY_COLSPAN}" class="att-empty">Failed to load check-in log. Check console.</td></tr>`;
 				});
 		}
 
-		function exportTodayCsv() {
-			const rows = todayFiltered();
-			const head = [
-				"Job No",
-				"Name",
-				"Department",
-				"Date",
-				"Check-In",
-				"Check-In From",
-				"Check-Out",
-				"Check-Out From",
-				"Duration",
-				"Logs",
-				"Status",
-			];
-			const esc = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
-			const lines = [head.map(esc).join(",")];
-			rows.forEach((r) => {
-				lines.push(
-					[
-						r.job_number,
-						r.employee_name,
-						r.department,
-						r.date,
-						r.check_in_time,
-						r.check_in_from,
-						r.check_out_time,
-						r.check_out_from,
-						r.duration,
-						r.log_count,
-						r.completion,
-					]
-						.map(esc)
-						.join(","),
-				);
-			});
-			const blob = new Blob(["\ufeff" + lines.join("\n")], {
-				type: "text/csv;charset=utf-8;",
-			});
+		function downloadCsv(head, lines, filename) {
+			const e = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+			const csv = [head.map(e).join(",")]
+				.concat(lines.map((l) => l.map(e).join(",")))
+				.join("\n");
+			const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
 			const a = document.createElement("a");
 			a.href = URL.createObjectURL(blob);
-			a.download = `checkin_log_${document.getElementById("todayDate").value}.csv`;
+			a.download = filename;
 			a.click();
+			setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+		}
+
+		function exportTodayCsv() {
+			downloadCsv(
+				[
+					"Job No",
+					"Name",
+					"Department",
+					"Date",
+					"Check-In",
+					"Check-In From",
+					"Check-Out",
+					"Check-Out From",
+					"Duration",
+					"Logs",
+					"Status",
+				],
+				todayFiltered().map((r) => [
+					r.job_number,
+					r.employee_name,
+					r.department,
+					r.date,
+					r.check_in_time,
+					r.check_in_from,
+					r.check_out_time,
+					r.check_out_from,
+					r.duration,
+					r.log_count,
+					r.completion,
+				]),
+				`checkin_log_${$("todayDate").value}.csv`,
+			);
 		}
 
 		function setupTodayPanel() {
-			document.getElementById("todayDate").value = fmtDate(new Date());
+			$("todayDate").value = fmtDate(new Date());
 
 			document.querySelectorAll(".pb-chip[data-tstate]").forEach((chip) => {
 				chip.addEventListener("click", () => {
@@ -867,22 +973,20 @@
 				});
 			});
 
-			document.getElementById("todayDate").addEventListener("change", loadToday);
-			document.getElementById("todaySearch").addEventListener("input", renderTodayTable);
-			document.getElementById("btnTodayRefresh").addEventListener("click", loadToday);
-			document.getElementById("btnTodayExport").addEventListener("click", exportTodayCsv);
-			document.getElementById("todayAuto").addEventListener("change", setupAutoRefresh);
-
+			$("todayDate").addEventListener("change", loadToday);
+			$("todaySearch").addEventListener("input", renderTodayTable);
+			$("btnTodayRefresh").addEventListener("click", loadToday);
+			$("btnTodayExport").addEventListener("click", exportTodayCsv);
+			$("todayAuto").addEventListener("change", setupAutoRefresh);
 			setupAutoRefresh();
 		}
 
 		function setupAutoRefresh() {
 			if (todayTimer) clearInterval(todayTimer);
-			if (!document.getElementById("todayAuto").checked) return;
+			if (!$("todayAuto").checked) return;
 			todayTimer = setInterval(() => {
 				if (document.hidden) return;
-				if (document.getElementById("todayDate").value === fmtDate(new Date()))
-					loadToday();
+				if ($("todayDate").value === fmtDate(new Date())) loadToday();
 			}, 60000);
 		}
 
@@ -903,7 +1007,7 @@
 		}
 
 		function renderStatusChart(s) {
-			const ctx = document.getElementById("statusChart");
+			const ctx = $("statusChart");
 			if (statusChart) statusChart.destroy();
 			const vals = [s.present || 0, s.absent || 0, s.on_leave || 0, s.half_day || 0];
 			if (!vals.some((v) => v > 0)) {
@@ -938,7 +1042,7 @@
 		}
 
 		function renderDeptChart(rows) {
-			const ctx = document.getElementById("deptChart");
+			const ctx = $("deptChart");
 			if (deptChart) deptChart.destroy();
 			const byDept = {};
 			rows.forEach((r) => {
@@ -987,9 +1091,74 @@
 			});
 		}
 
+		/* ================= EMPLOYEE-WISE SUMMARY ================= */
+		function buildSummary(rows) {
+			const map = {};
+			rows.forEach((r) => {
+				const k = r.employee;
+				const e = (map[k] = map[k] || {
+					employee: r.employee,
+					employee_name: r.employee_name,
+					department: r.department || "-",
+					present: 0,
+					absent: 0,
+					on_leave: 0,
+					half_day: 0,
+					late: 0,
+					incomplete: 0,
+					actual_hours: 0,
+					ot_hours: 0,
+				});
+				const s = (r.status || "").toLowerCase();
+				if (s.includes("present")) e.present++;
+				else if (s.includes("absent")) e.absent++;
+				else if (s.includes("leave")) e.on_leave++;
+				else if (s.includes("half")) e.half_day++;
+				if (r.late_entry) e.late++;
+				if (r.completion === "Incomplete") e.incomplete++;
+				e.actual_hours += Number(r.actual_hours) || 0;
+				e.ot_hours += Number(r.overtime_hours) || 0;
+			});
+			return Object.values(map).map((e) => {
+				e.actual_hours = Math.round(e.actual_hours * 10) / 10;
+				e.ot_hours = Math.round(e.ot_hours * 10) / 10;
+				return e;
+			});
+		}
+
+		function renderSummaryTable() {
+			updateSortArrows(".att-table th[data-skey]", "skey", sumSortKey, sumSortDir);
+			const rows = sortGeneric(sumRows, sumSortKey, sumSortDir);
+			if (!rows.length) {
+				$("sumBody").innerHTML =
+					`<tr><td colspan="${SUM_COLSPAN}" class="att-empty">No attendance records found.</td></tr>`;
+				return;
+			}
+			const n = (v, cls) =>
+				v > 0 ? `<span class="${cls}">${v}</span>` : `<span class="dot-grey">0</span>`;
+			$("sumBody").innerHTML = rows
+				.map(
+					(e) => `
+			<tr class="clickable" data-emp="${esc(e.employee_name)}">
+				<td>${esc(e.employee_name)}</td>
+				<td>${esc(e.employee)}</td>
+				<td class="site-txt">${esc(e.department)}</td>
+				<td>${e.present}</td>
+				<td>${n(e.absent, "num-red")}</td>
+				<td>${n(e.on_leave, "num-blue")}</td>
+				<td>${n(e.half_day, "num-amber")}</td>
+				<td>${n(e.late, "num-amber")}</td>
+				<td>${n(e.incomplete, "num-amber")}</td>
+				<td class="actual-hrs">${e.actual_hours}</td>
+				<td>${e.ot_hours > 0 ? `<span class="num-amber">${e.ot_hours}h</span>` : `<span class="dot-grey">-</span>`}</td>
+			</tr>`,
+				)
+				.join("");
+		}
+
 		/* ================= MAIN TABLE ================= */
 		function filteredRows() {
-			const q = (document.getElementById("tblSearch").value || "").toLowerCase();
+			const q = ($("tblSearch").value || "").toLowerCase();
 			let rows = allRows;
 			if (q) {
 				rows = rows.filter((r) =>
@@ -1014,16 +1183,10 @@
 
 		function renderTable() {
 			const rows = filteredRows();
-			document.getElementById("rowCount").textContent =
-				`${rows.length} of ${allRows.length} records`;
+			$("rowCount").textContent = `${rows.length} of ${allRows.length} records`;
+			updateSortArrows(".att-table th[data-key]", "key", sortKey, sortDir);
 
-			document.querySelectorAll(".att-table th[data-key]").forEach((th) => {
-				th.classList.toggle("sorted", th.dataset.key === sortKey);
-				th.textContent = th.textContent.replace(/ [↑↓]$/, "");
-				if (th.dataset.key === sortKey) th.textContent += sortDir === "asc" ? " ↑" : " ↓";
-			});
-
-			const body = document.getElementById("tblBody");
+			const body = $("tblBody");
 			if (!rows.length) {
 				body.innerHTML = `<tr><td colspan="${COLSPAN}" class="att-empty">No attendance records found.</td></tr>`;
 				return;
@@ -1038,25 +1201,25 @@
 
 					const otCell = r.overtime_enabled
 						? r.overtime_hours > 0
-							? `<span style="color:#b97b0f;font-weight:700;">${r.overtime_hours}h</span>`
+							? `<span style="color:#b97b0f;font-weight:700;">${esc(r.overtime_hours)}h</span>`
 							: `<span class="dot-grey">0h</span>`
 						: `<span class="dot-grey">-</span>`;
 
 					return `
 			<tr class="${isAbsent ? "row-absent" : r.completion === "Incomplete" ? "row-open" : ""} ${isNewGroup ? "group-start" : ""}">
-				<td>${r.job_number}</td>
-				<td>${r.employee_name}</td>
-				<td>${r.date}</td>
-				<td>${r.day}</td>
+				<td>${esc(r.job_number)}</td>
+				<td>${esc(r.employee_name)}</td>
+				<td>${esc(r.date)}</td>
+				<td>${esc(r.day)}</td>
 				<td>${badge(r.status)}</td>
-				<td>${r.shift || "-"}</td>
-				<td>${r.check_in_time}</td>
-				<td class="site-txt">${r.check_in_from}</td>
-				<td>${r.check_out_time}</td>
-				<td class="site-txt">${r.check_out_from}</td>
+				<td>${esc(r.shift || "-")}</td>
+				<td>${esc(r.check_in_time)}</td>
+				<td class="site-txt">${esc(r.check_in_from)}</td>
+				<td>${esc(r.check_out_time)}</td>
+				<td class="site-txt">${esc(r.check_out_from)}</td>
 				<td>${punchBadge(r.completion)}</td>
-				<td>${r.working_hours}</td>
-				<td class="actual-hrs">${r.actual_hours}</td>
+				<td>${esc(r.working_hours)}</td>
+				<td class="actual-hrs">${esc(r.actual_hours)}</td>
 				<td>${r.late_entry ? '<span class="dot-red">●</span>' : '<span class="dot-grey">-</span>'}</td>
 				<td>${r.early_exit ? '<span class="dot-red">●</span>' : '<span class="dot-grey">-</span>'}</td>
 				<td>${otCell}</td>
@@ -1066,68 +1229,114 @@
 		}
 
 		function exportCsv() {
-			const rows = filteredRows();
-			const head = [
-				"Job No",
-				"Name",
-				"Date",
-				"Day",
-				"Status",
-				"Shift",
-				"Time of Attendance",
-				"Check-In From",
-				"Time of Leave",
-				"Check-Out From",
-				"Punch Status",
-				"Sys Hours",
-				"Actual Hours",
-				"Late",
-				"Early",
-				"OT Hours",
-			];
-			const esc = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
-			const lines = [head.map(esc).join(",")];
-			rows.forEach((r) => {
-				lines.push(
-					[
-						r.job_number,
-						r.employee_name,
-						r.date,
-						r.day,
-						r.status,
-						r.shift,
-						r.check_in_time,
-						r.check_in_from,
-						r.check_out_time,
-						r.check_out_from,
-						r.completion,
-						r.working_hours,
-						r.actual_hours,
-						r.late_entry ? "Yes" : "No",
-						r.early_exit ? "Yes" : "No",
-						r.overtime_enabled ? r.overtime_hours : "-",
-					]
-						.map(esc)
-						.join(","),
-				);
-			});
-			const blob = new Blob(["\ufeff" + lines.join("\n")], {
-				type: "text/csv;charset=utf-8;",
-			});
-			const a = document.createElement("a");
-			a.href = URL.createObjectURL(blob);
-			a.download = `attendance_${document.getElementById("fltFrom").value}_${document.getElementById("fltTo").value}.csv`;
-			a.click();
+			downloadCsv(
+				[
+					"Job No",
+					"Name",
+					"Date",
+					"Day",
+					"Status",
+					"Shift",
+					"Time of Attendance",
+					"Check-In From",
+					"Time of Leave",
+					"Check-Out From",
+					"Punch Status",
+					"Sys Hours",
+					"Actual Hours",
+					"Late",
+					"Early",
+					"OT Hours",
+				],
+				filteredRows().map((r) => [
+					r.job_number,
+					r.employee_name,
+					r.date,
+					r.day,
+					r.status,
+					r.shift,
+					r.check_in_time,
+					r.check_in_from,
+					r.check_out_time,
+					r.check_out_from,
+					r.completion,
+					r.working_hours,
+					r.actual_hours,
+					r.late_entry ? "Yes" : "No",
+					r.early_exit ? "Yes" : "No",
+					r.overtime_enabled ? r.overtime_hours : "-",
+				]),
+				`attendance_${$("fltFrom").value}_${$("fltTo").value}.csv`,
+			);
 		}
 
+		/* ================= PDF EXPORT (Arabic / English) ================= */
+		function readServerError(text) {
+			try {
+				const j = JSON.parse(text);
+				if (j._server_messages) {
+					const msgs = JSON.parse(j._server_messages).map((m) => JSON.parse(m).message);
+					return msgs.join("\n").replace(/<[^>]+>/g, "");
+				}
+				if (j.exception)
+					return String(j.exception).split(": ").slice(1).join(": ") || j.exception;
+			} catch (e) {}
+			return "PDF export failed. Check the server error log.";
+		}
+
+		function exportPdf() {
+			const from_date = $("fltFrom").value;
+			const to_date = $("fltTo").value;
+			if (!from_date || !to_date) {
+				alert("Please select From and To dates");
+				return;
+			}
+			const lang = $("pdfLang").value;
+			const q = new URLSearchParams({ from_date, to_date, lang });
+			if ($("fltDept").value) q.set("department", $("fltDept").value);
+			if ($("fltEmp").value) q.set("employee", $("fltEmp").value);
+
+			const btn = $("btnPdf");
+			const label = btn.textContent;
+			btn.disabled = true;
+			btn.textContent = "⏳ Preparing PDF...";
+
+			fetch("/api/method/" + METHOD_PREFIX + ".export_attendance_pdf?" + q.toString(), {
+				credentials: "same-origin",
+			})
+				.then(async (res) => {
+					const type = res.headers.get("content-type") || "";
+					if (!res.ok || !type.includes("pdf"))
+						throw new Error(readServerError(await res.text()));
+					return res.blob();
+				})
+				.then((blob) => {
+					const a = document.createElement("a");
+					a.href = URL.createObjectURL(blob);
+					a.download = `attendance_${lang}_${from_date}_${to_date}.pdf`;
+					a.click();
+					setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+				})
+				.catch((e) => alert(e.message || "PDF export failed"))
+				.finally(() => {
+					btn.disabled = false;
+					btn.textContent = label;
+				});
+		}
+
+		/* ================= LOAD ================= */
 		function loadData() {
-			const from_date = document.getElementById("fltFrom").value;
-			const to_date = document.getElementById("fltTo").value;
-			const department = document.getElementById("fltDept").value;
-			const employee = document.getElementById("fltEmp").value;
+			const from_date = $("fltFrom").value;
+			const to_date = $("fltTo").value;
+			const department = $("fltDept").value;
+			const employee = $("fltEmp").value;
 
 			if (!from_date || !to_date) {
 				alert("Please select From and To dates");
+				return;
+			}
+			if (from_date > to_date) {
+				alert("From date cannot be after To date");
 				return;
 			}
 
@@ -1135,35 +1344,46 @@
 			if (department) args.department = department;
 			if (employee) args.employee = employee;
 
-			document.getElementById("tblBody").innerHTML =
+			$("tblBody").innerHTML =
 				`<tr><td colspan="${COLSPAN}" class="att-loading">Loading attendance data...</td></tr>`;
-			document.getElementById("rangeNote").textContent = `${from_date} → ${to_date}`;
+			$("sumBody").innerHTML =
+				`<tr><td colspan="${SUM_COLSPAN}" class="att-loading">Loading...</td></tr>`;
+			$("rangeNote").textContent = `${from_date} → ${to_date}`;
 
+			const seq = ++loadSeq;
 			callMethod(METHOD_PREFIX + ".get_attendance_data", args)
 				.then((d) => {
-					if (!d) return;
+					if (seq !== loadSeq || !d) return; // a newer request is in flight
 					if (d.error) {
-						document.getElementById("tblBody").innerHTML =
-							`<tr><td colspan="${COLSPAN}" class="att-empty">Error: ${d.error}</td></tr>`;
+						$("tblBody").innerHTML =
+							`<tr><td colspan="${COLSPAN}" class="att-empty">Error: ${esc(d.error)}</td></tr>`;
+						$("sumBody").innerHTML =
+							`<tr><td colspan="${SUM_COLSPAN}" class="att-empty">Error</td></tr>`;
 						return;
 					}
 					allRows = d.rows || [];
+					sumRows = buildSummary(allRows);
 					sortKey = null; // reset to grouped backend order on every fresh load
+					$("tblSearch").value = "";
 					renderTiles(d.summary || {});
 					renderStatusChart(d.summary || {});
 					renderDeptChart(allRows);
+					renderSummaryTable();
 					renderTable();
 				})
 				.catch((e) => {
+					if (seq !== loadSeq) return;
 					console.error("Attendance dashboard error:", e);
-					document.getElementById("tblBody").innerHTML =
+					$("tblBody").innerHTML =
 						`<tr><td colspan="${COLSPAN}" class="att-empty">Failed to load data. Check console.</td></tr>`;
+					$("sumBody").innerHTML =
+						`<tr><td colspan="${SUM_COLSPAN}" class="att-empty">Failed to load data.</td></tr>`;
 				});
 		}
 
 		function loadDepartments() {
 			callMethod(METHOD_PREFIX + ".get_departments").then((depts) => {
-				const sel = document.getElementById("fltDept");
+				const sel = $("fltDept");
 				(depts || []).forEach((d) => {
 					const opt = document.createElement("option");
 					opt.value = d;
@@ -1181,8 +1401,8 @@
 						.forEach((c) => c.classList.remove("active"));
 					chip.classList.add("active");
 					const [f, t] = resolvePeriod(chip.dataset.period);
-					document.getElementById("fltFrom").value = f;
-					document.getElementById("fltTo").value = t;
+					$("fltFrom").value = f;
+					$("fltTo").value = t;
 					loadData();
 				});
 			});
@@ -1200,6 +1420,29 @@
 					renderTable();
 				});
 			});
+			document.querySelectorAll(".att-table th[data-skey]").forEach((th) => {
+				th.addEventListener("click", () => {
+					const key = th.dataset.skey;
+					if (sumSortKey === key) sumSortDir = sumSortDir === "asc" ? "desc" : "asc";
+					else {
+						sumSortKey = key;
+						sumSortDir = ["employee_name", "employee", "department"].includes(key)
+							? "asc"
+							: "desc";
+					}
+					renderSummaryTable();
+				});
+			});
+			// click an employee in the summary -> filter the detail table to that employee
+			$("sumBody").addEventListener("click", (ev) => {
+				const tr = ev.target.closest("tr[data-emp]");
+				if (!tr) return;
+				$("tblSearch").value = tr.dataset.emp;
+				renderTable();
+				$("tblBody")
+					.closest(".att-table-wrap")
+					.scrollIntoView({ behavior: "smooth", block: "start" });
+			});
 		}
 
 		function start() {
@@ -1208,26 +1451,30 @@
 			setupTableSort();
 			setupTodayPanel();
 
-			document.getElementById("btnLoad").addEventListener("click", () => {
+			$("btnLoad").addEventListener("click", () => {
 				loadData();
 				loadToday();
 			});
-			document.getElementById("btnExport").addEventListener("click", exportCsv);
-			document.getElementById("tblSearch").addEventListener("input", renderTable);
+			$("fltEmp").addEventListener("keydown", (e) => {
+				if (e.key === "Enter") $("btnLoad").click();
+			});
+			$("btnExport").addEventListener("click", exportCsv);
+			$("btnPdf").addEventListener("click", exportPdf);
+			$("tblSearch").addEventListener("input", renderTable);
 
 			loadToday();
 
 			callMethod(METHOD_PREFIX + ".get_latest_range").then((r) => {
 				if (r && r.from_date) {
-					document.getElementById("fltFrom").value = r.from_date;
-					document.getElementById("fltTo").value = r.to_date;
+					$("fltFrom").value = r.from_date;
+					$("fltTo").value = r.to_date;
 					document
 						.querySelectorAll(".pb-chip[data-period]")
 						.forEach((c) => c.classList.remove("active"));
 				} else {
 					const [f, t] = resolvePeriod("this_month");
-					document.getElementById("fltFrom").value = f;
-					document.getElementById("fltTo").value = t;
+					$("fltFrom").value = f;
+					$("fltTo").value = t;
 				}
 				loadData();
 			});
