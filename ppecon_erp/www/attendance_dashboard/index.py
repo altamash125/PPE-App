@@ -400,7 +400,7 @@ AR_DAYS = {"Saturday": "السبت", "Sunday": "الأحد", "Monday": "الاث
 
 PDF_LABELS = {
     "ar": {
-        "head": ["الرقم الوظيفي", "الاسم", "التاريخ", "اليوم", "حالة الحضور", "ساعات الدوام",
+        "head": ["الرقم الوظيفي", "الاسم", "التاريخ", "اليوم", "حالة الحضور",
                  "توقيت الحضور", "مكان الحضور", "توقيت الانصراف", "مكان الانصراف",
                  "ساعات الدوام الفعلي", "الإدارة"],
         "total": "المجموع", "title": "تقرير الحضور والانصراف", "summary": "الملخص",
@@ -410,7 +410,7 @@ PDF_LABELS = {
                    "Incomplete": "غير مكتملة", "NoPunch": "بدون بصمة", "none": "-"},
     },
     "en": {
-        "head": ["Emp ID", "Name", "Date", "Day", "Status", "Shift Hrs", "Check-In", "Check-In From",
+        "head": ["Emp ID", "Name", "Date", "Day", "Status", "Check-In", "Check-In From",
                  "Check-Out", "Check-Out From", "Actual Time", "Dept."],
         "total": "Total", "title": "Attendance Report", "summary": "Summary",
         "absent": "Absent days", "leave": "Leave days", "half": "Half day", "present": "Present days",
@@ -452,7 +452,7 @@ table.t td.st-NoPunch { background:#e4daf3; color:#58389a; font-weight:bold; }
 .box .r.red b { color:#c2402a; } .box .r.blue b { color:#1b6bc4; }
 """
 
-PDF_COL_W = [8, 17.5, 8, 5.5, 7.5, 4.5, 6, 11, 6, 11, 7, 8]
+PDF_COL_W = [8, 19, 8, 5.5, 7.5, 6, 12, 6, 12, 7, 9]
 
 
 def _build_pdf_html(rows, from_date, to_date, lang="ar"):
@@ -519,13 +519,13 @@ def _build_pdf_html(rows, from_date, to_date, lang="ar"):
 
             day_txt = AR_DAYS[d.strftime("%A")] if lang == "ar" else d.strftime("%a")
             vals = [first.get("employee"), first.get("employee_name"), d.isoformat(), day_txt,
-                    L["status"][key], "-", tin, pin, tout, pout,
+                    L["status"][key], tin, pin, tout, pout,
                     "%02d:%02d" % (tm // 60, tm % 60), dept]
             cells = []
             for i, v in enumerate(vals):
                 # late check-in time is shown in red
                 cls = ""
-                if i == 6 and late and v != "-":
+                if i == 5 and late and v != "-":
                     cls = ' class="late"'
                 elif i == 4 and key != "none":
                     cls = ' class="st-%s"' % key.replace(" ", "")

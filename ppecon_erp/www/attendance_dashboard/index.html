@@ -275,12 +275,6 @@
 		color: #1f272e;
 		margin-bottom: 10px;
 	}
-	.att-card-title .hint {
-		font-weight: 400;
-		color: #98a4b0;
-		font-size: 11px;
-		margin-left: 6px;
-	}
 	.chart-box {
 		position: relative;
 		height: 260px;
@@ -334,10 +328,6 @@
 		max-height: 430px;
 		box-shadow: none;
 	}
-	.att-table-wrap.summary {
-		max-height: 380px;
-		margin-bottom: 20px;
-	}
 	table.att-table {
 		width: 100%;
 		border-collapse: collapse;
@@ -346,9 +336,6 @@
 	}
 	table.att-table.narrow {
 		min-width: 1180px;
-	}
-	table.att-table.compact {
-		min-width: 980px;
 	}
 	.att-table th {
 		background: #f4f5f6;
@@ -395,9 +382,6 @@
 	.att-table tr.group-start td {
 		border-top: 2px solid #dde6f0;
 	}
-	.att-table tr.clickable {
-		cursor: pointer;
-	}
 	.att-badge {
 		display: inline-block;
 		padding: 2px 10px;
@@ -436,18 +420,6 @@
 	.b-none {
 		background: #f1f3f5;
 		color: #8d99a6;
-	}
-	.num-red {
-		color: #c2402a;
-		font-weight: 700;
-	}
-	.num-blue {
-		color: #1b6bc4;
-		font-weight: 700;
-	}
-	.num-amber {
-		color: #b97b0f;
-		font-weight: 700;
 	}
 	.dot-red {
 		color: #c2402a;
@@ -565,41 +537,6 @@
 		</div>
 	</div>
 
-	<!-- ============ EMPLOYEE-WISE SUMMARY ============ -->
-	<div class="att-card" style="margin-bottom: 20px">
-		<div class="att-card-title">
-			Employee-wise Summary
-			<span class="hint"
-				>absent / leave days per employee · click a row to filter the detail table
-				below</span
-			>
-		</div>
-		<div class="att-table-wrap summary">
-			<table class="att-table compact">
-				<thead>
-					<tr>
-						<th data-skey="employee_name">Name</th>
-						<th data-skey="employee">Job No.</th>
-						<th data-skey="department">Department</th>
-						<th data-skey="present">Present</th>
-						<th data-skey="absent">Absent</th>
-						<th data-skey="on_leave">On Leave</th>
-						<th data-skey="half_day">Half Day</th>
-						<th data-skey="late">Late</th>
-						<th data-skey="incomplete">Incomplete</th>
-						<th data-skey="actual_hours">Actual Hrs</th>
-						<th data-skey="ot_hours">OT Hrs</th>
-					</tr>
-				</thead>
-				<tbody id="sumBody">
-					<tr>
-						<td colspan="11" class="att-empty">Select a range and click Apply</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-	</div>
-
 	<!-- ================= TABLE ================= -->
 	<div class="att-table-toolbar">
 		<input
@@ -653,16 +590,12 @@
 		const METHOD_PREFIX = "ppecon_erp.www.attendance_dashboard.index";
 		const COLSPAN = 16;
 		const TODAY_COLSPAN = 10;
-		const SUM_COLSPAN = 11;
 
 		let allRows = [];
-		let sumRows = [];
 		let statusChart = null,
 			deptChart = null;
 		let sortKey = null,
 			sortDir = "asc"; // null = keep backend order (grouped, latest date first)
-		let sumSortKey = "absent",
-			sumSortDir = "desc";
 		let loadSeq = 0; // guards against out-of-order responses
 
 		let todayRows = [];
@@ -1091,71 +1024,6 @@
 			});
 		}
 
-		/* ================= EMPLOYEE-WISE SUMMARY ================= */
-		function buildSummary(rows) {
-			const map = {};
-			rows.forEach((r) => {
-				const k = r.employee;
-				const e = (map[k] = map[k] || {
-					employee: r.employee,
-					employee_name: r.employee_name,
-					department: r.department || "-",
-					present: 0,
-					absent: 0,
-					on_leave: 0,
-					half_day: 0,
-					late: 0,
-					incomplete: 0,
-					actual_hours: 0,
-					ot_hours: 0,
-				});
-				const s = (r.status || "").toLowerCase();
-				if (s.includes("present")) e.present++;
-				else if (s.includes("absent")) e.absent++;
-				else if (s.includes("leave")) e.on_leave++;
-				else if (s.includes("half")) e.half_day++;
-				if (r.late_entry) e.late++;
-				if (r.completion === "Incomplete") e.incomplete++;
-				e.actual_hours += Number(r.actual_hours) || 0;
-				e.ot_hours += Number(r.overtime_hours) || 0;
-			});
-			return Object.values(map).map((e) => {
-				e.actual_hours = Math.round(e.actual_hours * 10) / 10;
-				e.ot_hours = Math.round(e.ot_hours * 10) / 10;
-				return e;
-			});
-		}
-
-		function renderSummaryTable() {
-			updateSortArrows(".att-table th[data-skey]", "skey", sumSortKey, sumSortDir);
-			const rows = sortGeneric(sumRows, sumSortKey, sumSortDir);
-			if (!rows.length) {
-				$("sumBody").innerHTML =
-					`<tr><td colspan="${SUM_COLSPAN}" class="att-empty">No attendance records found.</td></tr>`;
-				return;
-			}
-			const n = (v, cls) =>
-				v > 0 ? `<span class="${cls}">${v}</span>` : `<span class="dot-grey">0</span>`;
-			$("sumBody").innerHTML = rows
-				.map(
-					(e) => `
-			<tr class="clickable" data-emp="${esc(e.employee_name)}">
-				<td>${esc(e.employee_name)}</td>
-				<td>${esc(e.employee)}</td>
-				<td class="site-txt">${esc(e.department)}</td>
-				<td>${e.present}</td>
-				<td>${n(e.absent, "num-red")}</td>
-				<td>${n(e.on_leave, "num-blue")}</td>
-				<td>${n(e.half_day, "num-amber")}</td>
-				<td>${n(e.late, "num-amber")}</td>
-				<td>${n(e.incomplete, "num-amber")}</td>
-				<td class="actual-hrs">${e.actual_hours}</td>
-				<td>${e.ot_hours > 0 ? `<span class="num-amber">${e.ot_hours}h</span>` : `<span class="dot-grey">-</span>`}</td>
-			</tr>`,
-				)
-				.join("");
-		}
-
 		/* ================= MAIN TABLE ================= */
 		function filteredRows() {
 			const q = ($("tblSearch").value || "").toLowerCase();
@@ -1346,8 +1214,6 @@
 
 			$("tblBody").innerHTML =
 				`<tr><td colspan="${COLSPAN}" class="att-loading">Loading attendance data...</td></tr>`;
-			$("sumBody").innerHTML =
-				`<tr><td colspan="${SUM_COLSPAN}" class="att-loading">Loading...</td></tr>`;
 			$("rangeNote").textContent = `${from_date} → ${to_date}`;
 
 			const seq = ++loadSeq;
@@ -1357,18 +1223,14 @@
 					if (d.error) {
 						$("tblBody").innerHTML =
 							`<tr><td colspan="${COLSPAN}" class="att-empty">Error: ${esc(d.error)}</td></tr>`;
-						$("sumBody").innerHTML =
-							`<tr><td colspan="${SUM_COLSPAN}" class="att-empty">Error</td></tr>`;
 						return;
 					}
 					allRows = d.rows || [];
-					sumRows = buildSummary(allRows);
 					sortKey = null; // reset to grouped backend order on every fresh load
 					$("tblSearch").value = "";
 					renderTiles(d.summary || {});
 					renderStatusChart(d.summary || {});
 					renderDeptChart(allRows);
-					renderSummaryTable();
 					renderTable();
 				})
 				.catch((e) => {
@@ -1376,8 +1238,6 @@
 					console.error("Attendance dashboard error:", e);
 					$("tblBody").innerHTML =
 						`<tr><td colspan="${COLSPAN}" class="att-empty">Failed to load data. Check console.</td></tr>`;
-					$("sumBody").innerHTML =
-						`<tr><td colspan="${SUM_COLSPAN}" class="att-empty">Failed to load data.</td></tr>`;
 				});
 		}
 
@@ -1419,29 +1279,6 @@
 					}
 					renderTable();
 				});
-			});
-			document.querySelectorAll(".att-table th[data-skey]").forEach((th) => {
-				th.addEventListener("click", () => {
-					const key = th.dataset.skey;
-					if (sumSortKey === key) sumSortDir = sumSortDir === "asc" ? "desc" : "asc";
-					else {
-						sumSortKey = key;
-						sumSortDir = ["employee_name", "employee", "department"].includes(key)
-							? "asc"
-							: "desc";
-					}
-					renderSummaryTable();
-				});
-			});
-			// click an employee in the summary -> filter the detail table to that employee
-			$("sumBody").addEventListener("click", (ev) => {
-				const tr = ev.target.closest("tr[data-emp]");
-				if (!tr) return;
-				$("tblSearch").value = tr.dataset.emp;
-				renderTable();
-				$("tblBody")
-					.closest(".att-table-wrap")
-					.scrollIntoView({ behavior: "smooth", block: "start" });
 			});
 		}
 
