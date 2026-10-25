@@ -402,21 +402,19 @@ PDF_LABELS = {
     "ar": {
         "head": ["الرقم الوظيفي", "الاسم", "التاريخ", "اليوم", "حالة الحضور", "ساعات الدوام",
                  "توقيت الحضور", "مكان الحضور", "توقيت الانصراف", "مكان الانصراف",
-                 "ساعات الدوام الفعلي", "الساعات الكلية", "الساعات الاضافية", "الدقائق", "الإدارة"],
+                 "ساعات الدوام الفعلي", "الإدارة"],
         "total": "المجموع", "title": "تقرير الحضور والانصراف", "summary": "الملخص",
         "absent": "أيام الغياب", "leave": "أيام الإجازة", "half": "نصف يوم", "present": "أيام الحضور",
         "late": "تأخير", "incomplete": "غير مكتملة",
-        "extra": "إجمالي الإضافي (ساعة)",
         "status": {"Present": "مكتملة", "Absent": "غياب", "On Leave": "إجازة", "Half Day": "نصف يوم",
                    "Incomplete": "غير مكتملة", "NoPunch": "بدون بصمة", "none": "-"},
     },
     "en": {
         "head": ["Emp ID", "Name", "Date", "Day", "Status", "Shift Hrs", "Check-In", "Check-In From",
-                 "Check-Out", "Check-Out From", "Actual Time", "Total Hrs", "Extra Hrs", "Minutes", "Dept."],
+                 "Check-Out", "Check-Out From", "Actual Time", "Dept."],
         "total": "Total", "title": "Attendance Report", "summary": "Summary",
         "absent": "Absent days", "leave": "Leave days", "half": "Half day", "present": "Present days",
         "late": "Late", "incomplete": "Incomplete punch",
-        "extra": "Total extra (hrs)",
         "status": {"Present": "Complete", "Absent": "Absent", "On Leave": "Leave", "Half Day": "Half Day",
                    "Incomplete": "Incomplete", "NoPunch": "No punch", "none": "-"},
     },
@@ -440,17 +438,15 @@ table.t td:nth-child(2) { white-space:normal; font-size:6pt; line-height:1.05; }
 table.t thead { display: table-header-group; }
 table.t tr { page-break-inside: avoid; }
 .hl td { background:#ccd0ee; }
-.h1 { background:#bdd7ee; } .h2 { background:#9dc3e6; }
-.tot td { font-weight:bold; font-size:7.5pt; }
+.late { color:#d00000; font-weight:bold; }
 .box { border:1px solid #1b3a6b; }
 .box .bt { background:#1b3a6b; color:#fff; font-weight:bold; text-align:center; padding:4px; font-size:8pt; }
 .box .r { padding:4px 6px; border-bottom:0.5px solid #ccc; font-size:7.5pt; }
 .box .r b { display:block; font-size:10pt; }
 .box .r.red b { color:#c2402a; } .box .r.blue b { color:#1b6bc4; }
-.box .yel { background:#ffff00; font-weight:bold; padding:5px; text-align:center; font-size:8pt; }
 """
 
-PDF_COL_W = [8, 15.5, 7.5, 5.5, 6.5, 4, 5, 8, 5, 8, 6, 5, 5, 4.5, 6.5]
+PDF_COL_W = [8, 17.5, 8, 5.5, 7.5, 4.5, 6, 11, 6, 11, 7, 8]
 
 
 def _build_pdf_html(rows, from_date, to_date, lang="ar"):
@@ -471,14 +467,13 @@ def _build_pdf_html(rows, from_date, to_date, lang="ar"):
         first = g[0]
         by_date = {str(r["date"]): r for r in g}
         cnt = dict(present=0, absent=0, leave=0, half=0, late=0, incomplete=0)
-        tot_h = tot_e = tot_m = 0
         body = []
 
         for d in dates:
             r = by_date.get(d.isoformat())
             hl = d.weekday() == WEEKLY_OFF_WEEKDAY
             if not r:
-                key, hh, mm, tm = "none", 0, 0, 0
+                key, tm, late = "none", 0, False
                 tin = tout = pin = pout = dept = "-"
                 hl = True
             else:
@@ -511,27 +506,23 @@ def _build_pdf_html(rows, from_date, to_date, lang="ar"):
                 tin, tout = r.get("check_in_time") or "-", r.get("check_out_time") or "-"
                 pin, pout = r.get("check_in_from") or "-", r.get("check_out_from") or "-"
                 dept = r.get("department") or "-"
+                late = bool(r.get("late_entry"))
                 tm = round(flt(r.get("actual_hours")) * 60)
-                hh, mm = divmod(tm, 60)
                 if key in ("Absent", "On Leave"):
-                    hh = mm = tm = 0
+                    tm = 0
 
-            ex = max(0, hh - OVERTIME_THRESHOLD_HOURS)
-            tot_h += hh
-            tot_e += ex
-            tot_m += mm
             day_txt = AR_DAYS[d.strftime("%A")] if lang == "ar" else d.strftime("%a")
             vals = [first.get("employee"), first.get("employee_name"), d.isoformat(), day_txt,
                     L["status"][key], "-", tin, pin, tout, pout,
-                    "%02d:%02d" % (tm // 60, tm % 60), hh, ex, mm, dept]
-            body.append('<tr class="%s">%s</tr>' % (
-                "hl" if hl else "",
-                "".join("<td>%s</td>" % escape(str(v if v is not None else "-")) for v in vals)))
+                    "%02d:%02d" % (tm // 60, tm % 60), dept]
+            cells = []
+            for i, v in enumerate(vals):
+                # late check-in time is shown in red
+                cls = ' class="late"' if (i == 6 and late and v != "-") else ""
+                cells.append("<td%s>%s</td>" % (cls, escape(str(v if v is not None else "-"))))
+            body.append('<tr class="%s">%s</tr>' % ("hl" if hl else "", "".join(cells)))
 
-        head = "".join('<th class="%s">%s</th>' % ("h1" if i in (11, 12) else "h2" if i == 13 else "", h)
-                       for i, h in enumerate(L["head"]))
-        total = ('<tr class="tot"><td>%s</td>' % L["total"] + "<td></td>" * 10
-                 + "<td>%s</td><td>%s</td><td>%s</td><td></td></tr>" % (tot_h, tot_e, tot_m))
+        head = "".join("<th>%s</th>" % h for h in L["head"])
 
         rtl = ' dir="rtl"' if lang == "ar" else ""
 
@@ -541,15 +532,15 @@ def _build_pdf_html(rows, from_date, to_date, lang="ar"):
         side = ('<div class="box"%s><div class="bt">%s</div>' % (rtl, L["summary"])
                 + row(L["present"], cnt["present"]) + row(L["absent"], cnt["absent"], "red")
                 + row(L["leave"], cnt["leave"], "blue") + row(L["half"], cnt["half"])
-                + row(L["late"], cnt["late"]) + row(L["incomplete"], cnt["incomplete"])
-                + '<div class="yel">%s<br>%.2f</div></div>' % (L["extra"], tot_e + tot_m / 60.0))
+                + row(L["late"], cnt["late"], "red") + row(L["incomplete"], cnt["incomplete"])
+                + "</div>")
 
         out.append(
             '<div class="page"><div class="ttl" dir="ltr">%s | %s → %s | %s</div>'
             '<table class="wrap"><tr><td class="main"><table class="t"><colgroup>%s</colgroup>'
-            '<thead><tr>%s</tr></thead><tbody>%s%s</tbody></table></td><td class="side">%s</td></tr></table></div>'
+            '<thead><tr>%s</tr></thead><tbody>%s</tbody></table></td><td class="side">%s</td></tr></table></div>'
             % (L["title"], from_date, to_date, escape(str(first.get("employee_name") or "")),
-               cols, head, "".join(body), total, side))
+               cols, head, "".join(body), side))
 
     out.append("</body></html>")
     return "".join(out)
