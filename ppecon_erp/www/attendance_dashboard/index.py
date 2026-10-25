@@ -439,6 +439,12 @@ table.t thead { display: table-header-group; }
 table.t tr { page-break-inside: avoid; }
 .hl td { background:#ccd0ee; }
 .late { color:#d00000; font-weight:bold; }
+table.t td.st-Present { background:#d9f0e3; color:#12703f; font-weight:bold; }
+table.t td.st-Absent { background:#f6c9c3; color:#b3261e; font-weight:bold; }
+table.t td.st-OnLeave { background:#cfe3f8; color:#1457a8; font-weight:bold; }
+table.t td.st-HalfDay { background:#fde7b8; color:#8a5a00; font-weight:bold; }
+table.t td.st-Incomplete { background:#fcd5b5; color:#a24a00; font-weight:bold; }
+table.t td.st-NoPunch { background:#e4daf3; color:#58389a; font-weight:bold; }
 .box { border:1px solid #1b3a6b; }
 .box .bt { background:#1b3a6b; color:#fff; font-weight:bold; text-align:center; padding:4px; font-size:8pt; }
 .box .r { padding:4px 6px; border-bottom:0.5px solid #ccc; font-size:7.5pt; }
@@ -518,7 +524,11 @@ def _build_pdf_html(rows, from_date, to_date, lang="ar"):
             cells = []
             for i, v in enumerate(vals):
                 # late check-in time is shown in red
-                cls = ' class="late"' if (i == 6 and late and v != "-") else ""
+                cls = ""
+                if i == 6 and late and v != "-":
+                    cls = ' class="late"'
+                elif i == 4 and key != "none":
+                    cls = ' class="st-%s"' % key.replace(" ", "")
                 cells.append("<td%s>%s</td>" % (cls, escape(str(v if v is not None else "-"))))
             body.append('<tr class="%s">%s</tr>' % ("hl" if hl else "", "".join(cells)))
 
