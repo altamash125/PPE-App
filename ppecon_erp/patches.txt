@@ -7,13 +7,3 @@
 
 
 
-# One-time: run in `bench --site <site> console`, or put in a patch (patches.txt) of ppecon_erp.
-# These make the lookups in the new report instant even on large tables.
-import frappe
-
-def execute():
-    frappe.db.add_index("Material Request Item", ["project"])
-    frappe.db.add_index("Supplier Quotation Item", ["material_request"])
-    frappe.db.add_index("Purchase Order Item", ["material_request"])
-    frappe.db.add_index("Payment Request", ["reference_name"])
-    frappe.db.add_index("Payment Entry Reference", ["reference_name"])
